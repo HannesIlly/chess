@@ -39,6 +39,25 @@ translation_to_fen = {
     ROOK_BLACK: 'r',
     PAWN_BLACK: 'p',
 }
+FIELDS = {
+    'b1': 1,
+    'c1': 2,
+    'd1': 3,
+    'f1': 5,
+    'g1': 6,
+    'b8': 57,
+    'c8': 58,
+    'd8': 59,
+    'f8': 61,
+    'g8': 62,
+}
+# special moves
+CASTLE_SHORT = -1
+CASTLE_LONG = -2
+PROMOTION_QUEEN = -9
+PROMOTION_ROOK = -5
+PROMOTION_BISHOP = -4
+PROMOTION_KNIGHT = -3
 
 
 class Chessboard:
@@ -130,14 +149,14 @@ class Chessboard:
     def has_evaluation(self) -> bool:
         return self.evaluation is not None
 
-    def set_evaluation(self, evaluation: float) -> None:
+    def set_evaluation(self, evaluation: float):
         self.evaluation = evaluation
 
     def get_evaluation(self) -> float:
         return self.evaluation
 
-    def generate_moves(self):
-        moves = []  # list of tuples with from-square and to-square.
+    def generate_moves(self) -> list:
+        moves = []  # list of tuples with from-square and to-square. Special moves have the move type in third place.
         for field in range(64):
             if self.is_empty(field):
                 continue
@@ -153,9 +172,22 @@ class Chessboard:
                 elif self.has_piece(field, KNIGHT_WHITE):
                     moves.extend(self.get_knight_moves(field))
                 else:
-                    pass  # TODO pawn
+                    moves.extend(self.get_pawn_moves(field))
             elif self.turn == 'black' and self.is_black_piece(field):
-                pass  # TODO continue here with black moves
+                if self.has_piece(field, KING_BLACK):
+                    moves.extend(self.get_king_moves(field))
+                elif self.has_piece(field, QUEEN_BLACK):
+                    moves.extend(self.get_queen_moves(field))
+                elif self.has_piece(field, ROOK_BLACK):
+                    moves.extend(self.get_rook_moves(field))
+                elif self.has_piece(field, BISHOP_BLACK):
+                    moves.extend(self.get_bishop_moves(field))
+                elif self.has_piece(field, KNIGHT_BLACK):
+                    moves.extend(self.get_knight_moves(field))
+                else:
+                    moves.extend(self.get_pawn_moves(field))
+        # TODO exclude illegal moves (checks)
+        return moves
 
     def get_directional_moves(self, field: int, direction_x: int, direction_y: int, distance: int = 7) -> list:
         is_white_piece = self.is_white_piece(field)
@@ -182,7 +214,79 @@ class Chessboard:
             moves.append(move)
         return moves
 
-    def get_diagonal_moves(self, field, distance=7):
+    def is_attacked_by_white(self, field: int) -> bool:
+        # TODO test
+        directions = [(1, -1), (1, 0), (1, 1), (0, -1), (0, 1), (-1, -1), (-1, 0), (-1, 1)]
+        knight_directions = [(2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
+        # check all directions
+        for x, y in directions:
+            for i in range(1, 8):
+                target_field = field + i * x + 8 * i * y
+                # check if the target field is still on the board
+                if not is_field(target_field):
+                    break
+                # check if the target field has crossed the left/right border
+                if x < 0 and target_field % 8 > field % 8:
+                    break
+                if x > 0 and target_field % 8 < field % 8:
+                    break
+                # check if a piece was reached and the piece can move to the origin field
+                if self.is_white_piece(target_field) and self.can_move_to(target_field, field):
+                    return True
+        # check knight positions
+        for x, y in knight_directions:
+            target_field = field + x + 8 * y
+            # check if the target field is still on the board
+            if not is_field(target_field):
+                break
+            # check if the target field has crossed the left/right border
+            if x < 0 and target_field % 8 > field % 8:
+                break
+            if x > 0 and target_field % 8 < field % 8:
+                break
+            # check if a white knight was reached
+            if self.has_piece(target_field, KNIGHT_WHITE):
+                return True
+
+        return False
+
+    def is_attacked_by_black(self, field: int) -> bool:
+        # TODO test
+        directions = [(1, -1), (1, 0), (1, 1), (0, -1), (0, 1), (-1, -1), (-1, 0), (-1, 1)]
+        knight_directions = [(2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
+        # check all directions
+        for x, y in directions:
+            for i in range(1, 8):
+                target_field = field + i * x + 8 * i * y
+                # check if the target field is still on the board
+                if not is_field(target_field):
+                    break
+                # check if the target field has crossed the left/right border
+                if x < 0 and target_field % 8 > field % 8:
+                    break
+                if x > 0 and target_field % 8 < field % 8:
+                    break
+                # check if a piece was reached and the piece can move to the origin field
+                if self.is_black_piece(target_field) and self.can_move_to(target_field, field):
+                    return True
+        # check knight positions
+        for x, y in knight_directions:
+            target_field = field + x + 8 * y
+            # check if the target field is still on the board
+            if not is_field(target_field):
+                break
+            # check if the target field has crossed the left/right border
+            if x < 0 and target_field % 8 > field % 8:
+                break
+            if x > 0 and target_field % 8 < field % 8:
+                break
+            # check if a black knight was reached
+            if self.has_piece(target_field, KNIGHT_BLACK):
+                return True
+
+        return False
+
+    def get_diagonal_moves(self, field: int, distance: int = 7) -> list:
         moves = []
         moves.extend(self.get_directional_moves(field, -1, -1, distance))
         moves.extend(self.get_directional_moves(field, -1, 1, distance))
@@ -190,7 +294,7 @@ class Chessboard:
         moves.extend(self.get_directional_moves(field, 1, 1, distance))
         return moves
 
-    def get_straight_moves(self, field, distance=7):
+    def get_straight_moves(self, field: int, distance: int = 7) -> list:
         moves = []
         moves.extend(self.get_directional_moves(field, 0, -1, distance))
         moves.extend(self.get_directional_moves(field, 0, 1, distance))
@@ -198,38 +302,37 @@ class Chessboard:
         moves.extend(self.get_directional_moves(field, 1, 0, distance))
         return moves
 
-    def get_king_moves(self, field):
+    def get_king_moves(self, field: int) -> list:
         moves = []
         moves.extend(self.get_diagonal_moves(field, 1))
         moves.extend(self.get_straight_moves(field, 1))
         # check castle
-        if self.is_white_piece(field):
-            if field == translate_field_into_index('e1'):
-                if self.castle['white']['short']:
-                    pass  # TODO check castle
-                if self.castle['white']['long']:
-                    pass  # TODO check castle
-        elif self.is_black_piece(field):
-            if field == translate_field_into_index('e8'):
-                if self.castle['black']['short']:
-                    pass  # TODO check castle
-                if self.castle['black']['long']:
-                    pass  # TODO check castle
+        if self.has_piece(field, KING_WHITE):
+            if self.castle['white']['short'] and self.is_empty(FIELDS['f1']) and self.is_empty(FIELDS['g1']):
+                moves.append((field, FIELDS['g1'], CASTLE_SHORT))
+            if self.castle['white']['long'] and self.is_empty(FIELDS['b1']) and self.is_empty(FIELDS['c1']) \
+                    and self.is_empty(FIELDS['d1']):
+                moves.append((field, FIELDS['c1'], CASTLE_LONG))
+        elif self.has_piece(field, KING_BLACK):
+            if self.castle['black']['short']:
+                moves.append((field, FIELDS['g8'], CASTLE_SHORT))
+            if self.castle['black']['long']:
+                moves.append((field, FIELDS['c8'], CASTLE_LONG))
         return moves
 
-    def get_queen_moves(self, field):
+    def get_queen_moves(self, field: int) -> list:
         moves = []
         moves.extend(self.get_diagonal_moves(field))
         moves.extend(self.get_straight_moves(field))
         return moves
 
-    def get_rook_moves(self, field):
+    def get_rook_moves(self, field: int) -> list:
         return self.get_straight_moves(field)
 
-    def get_bishop_moves(self, field):
+    def get_bishop_moves(self, field: int) -> list:
         return self.get_diagonal_moves(field)
 
-    def get_knight_moves(self, field):
+    def get_knight_moves(self, field: int) -> list:
         moves = []
         moves.extend(self.get_directional_moves(field, -2, -1, 1))
         moves.extend(self.get_directional_moves(field, -2, 1, 1))
@@ -241,9 +344,119 @@ class Chessboard:
         moves.extend(self.get_directional_moves(field, 2, 1, 1))
         return moves
 
-    def get_pawn_moves(self):
-        pass  # TODO normal, long, en passant, promotion
-        # TODO maybe split into white/black
+    def get_white_pawn_moves(self, field: int) -> list:
+        moves = []
+        if self.has_piece(field, PAWN_WHITE):
+            # forward
+            if self.is_empty(field + 8):
+                # promotion
+                if field + 8 >= 8 * 7:
+                    moves.append((field, field + 8, PROMOTION_QUEEN))
+                    moves.append((field, field + 8, PROMOTION_ROOK))
+                    moves.append((field, field + 8, PROMOTION_BISHOP))
+                    moves.append((field, field + 8, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field + 8))
+                # two squares forward
+                if field < 16 and self.is_empty(field + 16):
+                    moves.append((field, field + 16))
+            # takes
+            if self.is_black_piece(field + 7) and (field + 7) % 8 < field % 8:
+                # promotion
+                if field + 7 >= 8 * 7:
+                    moves.append((field, field + 7, PROMOTION_QUEEN))
+                    moves.append((field, field + 7, PROMOTION_ROOK))
+                    moves.append((field, field + 7, PROMOTION_BISHOP))
+                    moves.append((field, field + 7, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field + 7))
+            if self.is_black_piece(field + 9) and (field + 9) % 8 > field % 8:
+                # promotion
+                if field + 9 >= 8 * 7:
+                    moves.append((field, field + 9, PROMOTION_QUEEN))
+                    moves.append((field, field + 9, PROMOTION_ROOK))
+                    moves.append((field, field + 9, PROMOTION_BISHOP))
+                    moves.append((field, field + 9, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field + 9))
+            # en passant
+            if self.en_passant:
+                if self.en_passant_field == field + 7 and self.en_passant_field % 8 < field % 8:
+                    moves.append((field, self.en_passant_field))
+                elif self.en_passant_field == field + 9 and self.en_passant_field % 8 > field % 8:
+                    moves.append((field, self.en_passant_field))
+        return moves
+
+    def get_black_pawn_moves(self, field: int) -> list:
+        moves = []
+        if self.has_piece(field, PAWN_BLACK):
+            # forward
+            if self.is_empty(field - 8):
+                # promotion
+                if field - 8 < 8:
+                    moves.append((field, field - 8, PROMOTION_QUEEN))
+                    moves.append((field, field - 8, PROMOTION_ROOK))
+                    moves.append((field, field - 8, PROMOTION_BISHOP))
+                    moves.append((field, field - 8, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field - 8))
+                # two squares forward
+                if field >= 8 * 6 and self.is_empty(field - 16):
+                    moves.append((field, field - 16))
+            # takes
+            if self.is_white_piece(field - 7) and (field - 7) % 8 > field % 8:
+                # promotion
+                if field - 7 < 8:
+                    moves.append((field, field - 7, PROMOTION_QUEEN))
+                    moves.append((field, field - 7, PROMOTION_ROOK))
+                    moves.append((field, field - 7, PROMOTION_BISHOP))
+                    moves.append((field, field - 7, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field - 7))
+            if self.is_white_piece(field - 9) and (field - 9) % 8 < field % 8:
+                # promotion
+                if field - 9 >= 8 * 7:
+                    moves.append((field, field - 9, PROMOTION_QUEEN))
+                    moves.append((field, field - 9, PROMOTION_ROOK))
+                    moves.append((field, field - 9, PROMOTION_BISHOP))
+                    moves.append((field, field - 9, PROMOTION_KNIGHT))
+                else:
+                    moves.append((field, field - 9))
+            # en passant
+            if self.en_passant:
+                if self.en_passant_field == field - 7 and self.en_passant_field % 8 > field % 8:
+                    moves.append((field, self.en_passant_field))
+                elif self.en_passant_field == field - 9 and self.en_passant_field % 8 < field % 8:
+                    moves.append((field, self.en_passant_field))
+        return moves
+
+    def get_pawn_moves(self, field: int) -> list:
+        moves = []
+        moves.extend(self.get_white_pawn_moves(field))
+        moves.extend(self.get_black_pawn_moves(field))
+        return moves
+
+    def can_move_to(self, field: int, target_field: int) -> bool:
+        if self.is_empty(field):
+            return False
+
+        moves = []
+        if self.has_piece(field, KING_WHITE) or self.has_piece(field, KING_BLACK):
+            moves = self.get_king_moves(field)
+        if self.has_piece(field, QUEEN_WHITE) or self.has_piece(field, QUEEN_BLACK):
+            moves = self.get_queen_moves(field)
+        if self.has_piece(field, ROOK_WHITE) or self.has_piece(field, ROOK_BLACK):
+            moves = self.get_rook_moves(field)
+        if self.has_piece(field, BISHOP_WHITE) or self.has_piece(field, BISHOP_BLACK):
+            moves = self.get_bishop_moves(field)
+        if self.has_piece(field, KNIGHT_WHITE) or self.has_piece(field, KNIGHT_BLACK):
+            moves = self.get_knight_moves(field)
+        if self.has_piece(field, PAWN_WHITE) or self.has_piece(field, PAWN_BLACK):
+            moves = self.get_pawn_moves(field)
+        for move in moves:
+            if move[1] == target_field:
+                return True
+        return False
 
     def has_piece(self, field: int, piece: int):
         if 0 <= field <= 63:
