@@ -215,35 +215,58 @@ class Chessboard:
         return moves
 
     def is_attacked_by_white(self, field: int) -> bool:
-        # TODO test
         directions = [(1, -1), (1, 0), (1, 1), (0, -1), (0, 1), (-1, -1), (-1, 0), (-1, 1)]
         knight_directions = [(2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
         # check all directions
         for x, y in directions:
-            for i in range(1, 8):
-                target_field = field + i * x + 8 * i * y
-                # check if the target field is still on the board
-                if not is_field(target_field):
+            for distance in range(1, 8):
+                target_field = field + distance * x + 8 * distance * y
+                # check if the target field is still on the board or a black piece blocks a potential attack
+                if not is_field(target_field) or self.is_black_piece(target_field):
                     break
                 # check if the target field has crossed the left/right border
                 if x < 0 and target_field % 8 > field % 8:
                     break
                 if x > 0 and target_field % 8 < field % 8:
                     break
-                # check if a piece was reached and the piece can move to the origin field
-                if self.is_white_piece(target_field) and self.can_move_to(target_field, field):
+
+                # check if a piece was reached and the piece can take on the origin field
+                # if not, the piece blocks other pieces from attacking (-> exit the distance loop)
+                if self.has_piece(target_field, KING_WHITE):
+                    if distance == 1:
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, QUEEN_WHITE):
                     return True
+                elif self.has_piece(target_field, ROOK_WHITE):
+                    if (x + y) % 2 == 1:  # only straight moves
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, BISHOP_WHITE):
+                    if (x + y) % 2 == 0:  # only diagonal moves
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, PAWN_WHITE):
+                    if distance == 1 and x != 0 and y == -1:  # viewpoint of the attacked field
+                        return True
+                    else:
+                        break
+
         # check knight positions
         for x, y in knight_directions:
             target_field = field + x + 8 * y
             # check if the target field is still on the board
             if not is_field(target_field):
-                break
+                continue
             # check if the target field has crossed the left/right border
             if x < 0 and target_field % 8 > field % 8:
-                break
+                continue
             if x > 0 and target_field % 8 < field % 8:
-                break
+                continue
+
             # check if a white knight was reached
             if self.has_piece(target_field, KNIGHT_WHITE):
                 return True
@@ -251,35 +274,58 @@ class Chessboard:
         return False
 
     def is_attacked_by_black(self, field: int) -> bool:
-        # TODO test
         directions = [(1, -1), (1, 0), (1, 1), (0, -1), (0, 1), (-1, -1), (-1, 0), (-1, 1)]
         knight_directions = [(2, 1), (2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2), (-2, 1), (-2, -1)]
         # check all directions
         for x, y in directions:
-            for i in range(1, 8):
-                target_field = field + i * x + 8 * i * y
-                # check if the target field is still on the board
-                if not is_field(target_field):
+            for distance in range(1, 8):
+                target_field = field + distance * x + 8 * distance * y
+                # check if the target field is still on the board or a white piece blocks a potential attack
+                if not is_field(target_field) or self.is_white_piece(target_field):
                     break
                 # check if the target field has crossed the left/right border
                 if x < 0 and target_field % 8 > field % 8:
                     break
                 if x > 0 and target_field % 8 < field % 8:
                     break
-                # check if a piece was reached and the piece can move to the origin field
-                if self.is_black_piece(target_field) and self.can_move_to(target_field, field):
+
+                # check if a piece was reached and the piece can take on the origin field
+                # if not, the piece blocks other pieces from attacking (-> exit the distance loop)
+                if self.has_piece(target_field, KING_BLACK):
+                    if distance == 1:
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, QUEEN_BLACK):
                     return True
+                elif self.has_piece(target_field, ROOK_BLACK):
+                    if (x + y) % 2 == 1:  # only straight moves
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, BISHOP_BLACK):
+                    if (x + y) % 2 == 0:  # only diagonal moves
+                        return True
+                    else:
+                        break
+                elif self.has_piece(target_field, PAWN_BLACK):
+                    if distance == 1 and x != 0 and y == 1:  # viewpoint of the attacked field
+                        return True
+                    else:
+                        break
+
         # check knight positions
         for x, y in knight_directions:
             target_field = field + x + 8 * y
             # check if the target field is still on the board
             if not is_field(target_field):
-                break
+                continue
             # check if the target field has crossed the left/right border
             if x < 0 and target_field % 8 > field % 8:
-                break
+                continue
             if x > 0 and target_field % 8 < field % 8:
-                break
+                continue
+
             # check if a black knight was reached
             if self.has_piece(target_field, KNIGHT_BLACK):
                 return True
