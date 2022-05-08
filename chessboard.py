@@ -40,16 +40,22 @@ translation_to_fen = {
     PAWN_BLACK: 'p',
 }
 FIELDS = {
+    'a1': 0,
     'b1': 1,
     'c1': 2,
     'd1': 3,
+    'e1': 4,
     'f1': 5,
     'g1': 6,
+    'h1': 7,
+    'a8': 56,
     'b8': 57,
     'c8': 58,
     'd8': 59,
+    'e8': 60,
     'f8': 61,
     'g8': 62,
+    'h8': 63
 }
 # special moves
 CASTLE_SHORT = -1
@@ -58,6 +64,7 @@ PROMOTION_QUEEN = -9
 PROMOTION_ROOK = -5
 PROMOTION_BISHOP = -4
 PROMOTION_KNIGHT = -3
+EN_PASSANT = -10
 
 
 class Chessboard:
@@ -157,6 +164,7 @@ class Chessboard:
 
     def generate_moves(self) -> list:
         moves = []  # list of tuples with from-square and to-square. Special moves have the move type in third place.
+        legal_moves = []
         for field in range(64):
             if self.is_empty(field):
                 continue
@@ -186,8 +194,197 @@ class Chessboard:
                     moves.extend(self.get_knight_moves(field))
                 else:
                     moves.extend(self.get_pawn_moves(field))
-        # TODO exclude illegal moves (checks)
-        return moves
+
+        # exclude moves where the white king would be in check (or moved through check)
+        for move in moves:
+            start_square = move[0]
+            target_square = move[1]
+            start_content = self.board[start_square]
+            target_content = self.board[target_square]
+            # execute the move
+            self.board[start_square] = EMPTY
+            self.board[target_square] = start_content
+
+            if self.turn == 'white':  # check legality for white
+                if len(move) == 2:
+                    # check for legality
+                    if not self.is_white_king_in_check():
+                        legal_moves.append(move)
+                    # undo the move
+                    self.board[start_square] = start_content
+                    self.board[target_square] = target_content
+                else:
+                    if move[2] == CASTLE_SHORT:
+                        # move the rook
+                        self.board[FIELDS['h1']] = EMPTY
+                        self.board[FIELDS['f1']] = ROOK_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check() and not self.is_attacked_by_black(FIELDS['f1']):
+                            # if king was not in check in the fist place
+                            if not self.is_attacked_by_black(FIELDS['e1']):
+                                legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                        self.board[FIELDS['h1']] = ROOK_WHITE
+                        self.board[FIELDS['f1']] = EMPTY
+                    elif move[2] == CASTLE_LONG:
+                        # move the rook
+                        self.board[FIELDS['a1']] = EMPTY
+                        self.board[FIELDS['d1']] = ROOK_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check() and not self.is_attacked_by_black(FIELDS['d1']):
+                            # if king was not in check in the fist place
+                            if not self.is_attacked_by_black(FIELDS['e1']):
+                                legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                        self.board[FIELDS['a1']] = ROOK_WHITE
+                        self.board[FIELDS['d1']] = EMPTY
+                    elif move[2] == EN_PASSANT:
+                        # remove en passant pawn
+                        self.board[target_square-8] = EMPTY
+                        # check for legality
+                        if not self.is_white_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square-8] = PAWN_BLACK
+                    elif move[2] == PROMOTION_QUEEN:
+                        # put promoted piece
+                        self.board[target_square] = QUEEN_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_ROOK:
+                        # put promoted piece
+                        self.board[target_square] = ROOK_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_BISHOP:
+                        # put promoted piece
+                        self.board[target_square] = BISHOP_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_KNIGHT:
+                        # put promoted piece
+                        self.board[target_square] = KNIGHT_WHITE
+                        # check for legality
+                        if not self.is_white_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+            else:  # check legality for black
+                if len(move) == 2:
+                    # check for legality
+                    if not self.is_black_king_in_check():
+                        legal_moves.append(move)
+                    # undo the move
+                    self.board[start_square] = start_content
+                    self.board[target_square] = target_content
+                else:
+                    if move[2] == CASTLE_SHORT:
+                        # move the rook
+                        self.board[FIELDS['h8']] = EMPTY
+                        self.board[FIELDS['f8']] = ROOK_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check() and not self.is_attacked_by_white(FIELDS['f8']):
+                            # if king was not in check in the fist place
+                            if not self.is_attacked_by_white(FIELDS['e8']):
+                                legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                        self.board[FIELDS['h8']] = ROOK_BLACK
+                        self.board[FIELDS['f8']] = EMPTY
+                    elif move[2] == CASTLE_LONG:
+                        # move the rook
+                        self.board[FIELDS['a8']] = EMPTY
+                        self.board[FIELDS['d8']] = ROOK_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check() and not self.is_attacked_by_white(FIELDS['d8']):
+                            # if king was not in check in the fist place
+                            if not self.is_attacked_by_white(FIELDS['e8']):
+                                legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                        self.board[FIELDS['a8']] = ROOK_BLACK
+                        self.board[FIELDS['d8']] = EMPTY
+                    elif move[2] == EN_PASSANT:
+                        # remove en passant pawn
+                        self.board[target_square+8] = EMPTY
+                        # check for legality
+                        if not self.is_black_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square+8] = PAWN_WHITE
+                    elif move[2] == PROMOTION_QUEEN:
+                        # put promoted piece
+                        self.board[target_square] = QUEEN_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_ROOK:
+                        # put promoted piece
+                        self.board[target_square] = ROOK_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_BISHOP:
+                        # put promoted piece
+                        self.board[target_square] = BISHOP_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+                    elif move[2] == PROMOTION_KNIGHT:
+                        # put promoted piece
+                        self.board[target_square] = KNIGHT_BLACK
+                        # check for legality
+                        if not self.is_black_king_in_check():
+                            legal_moves.append(move)
+                        # undo the move
+                        self.board[start_square] = start_content
+                        self.board[target_square] = target_content
+
+        return legal_moves
+
+    def is_white_king_in_check(self) -> bool:
+        # search for king
+        for field in range(64):
+            if self.has_piece(field, KING_WHITE):
+                # check if king is attacked
+                return self.is_attacked_by_black(field)
+
+    def is_black_king_in_check(self) -> bool:
+        # search for king
+        for field in range(64):
+            if self.has_piece(field, KING_BLACK):
+                # check if king is attacked
+                return self.is_attacked_by_white(field)
 
     def get_directional_moves(self, field: int, direction_x: int, direction_y: int, distance: int = 7) -> list:
         is_white_piece = self.is_white_piece(field)
@@ -428,9 +625,9 @@ class Chessboard:
             # en passant
             if self.en_passant:
                 if self.en_passant_field == field + 7 and self.en_passant_field % 8 < field % 8:
-                    moves.append((field, self.en_passant_field))
+                    moves.append((field, self.en_passant_field, EN_PASSANT))
                 elif self.en_passant_field == field + 9 and self.en_passant_field % 8 > field % 8:
-                    moves.append((field, self.en_passant_field))
+                    moves.append((field, self.en_passant_field, EN_PASSANT))
         return moves
 
     def get_black_pawn_moves(self, field: int) -> list:
@@ -471,9 +668,9 @@ class Chessboard:
             # en passant
             if self.en_passant:
                 if self.en_passant_field == field - 7 and self.en_passant_field % 8 > field % 8:
-                    moves.append((field, self.en_passant_field))
+                    moves.append((field, self.en_passant_field, EN_PASSANT))
                 elif self.en_passant_field == field - 9 and self.en_passant_field % 8 < field % 8:
-                    moves.append((field, self.en_passant_field))
+                    moves.append((field, self.en_passant_field, EN_PASSANT))
         return moves
 
     def get_pawn_moves(self, field: int) -> list:
