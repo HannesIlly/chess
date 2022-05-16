@@ -545,8 +545,6 @@ class Chessboard:
 
     def is_draw(self):
         return self.is_stalemate()
-        # TODO check for 50 moves rule
-        # TODO check for repetition (later; probably when position hashes are added)
 
     def get_diagonal_moves(self, field: int, distance: int = 7) -> list:
         moves = []
@@ -704,28 +702,6 @@ class Chessboard:
         moves.extend(self.get_white_pawn_moves(field))
         moves.extend(self.get_black_pawn_moves(field))
         return moves
-
-    def can_move_to(self, field: int, target_field: int) -> bool:
-        if self.is_empty(field):
-            return False
-
-        moves = []
-        if self.has_piece(field, KING_WHITE) or self.has_piece(field, KING_BLACK):
-            moves = self.get_king_moves(field)
-        if self.has_piece(field, QUEEN_WHITE) or self.has_piece(field, QUEEN_BLACK):
-            moves = self.get_queen_moves(field)
-        if self.has_piece(field, ROOK_WHITE) or self.has_piece(field, ROOK_BLACK):
-            moves = self.get_rook_moves(field)
-        if self.has_piece(field, BISHOP_WHITE) or self.has_piece(field, BISHOP_BLACK):
-            moves = self.get_bishop_moves(field)
-        if self.has_piece(field, KNIGHT_WHITE) or self.has_piece(field, KNIGHT_BLACK):
-            moves = self.get_knight_moves(field)
-        if self.has_piece(field, PAWN_WHITE) or self.has_piece(field, PAWN_BLACK):
-            moves = self.get_pawn_moves(field)
-        for move in moves:
-            if move[1] == target_field:
-                return True
-        return False
 
     def has_piece(self, field: int, piece: int):
         if 0 <= field <= 63:
