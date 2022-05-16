@@ -64,7 +64,8 @@ PROMOTION_QUEEN = -9
 PROMOTION_ROOK = -5
 PROMOTION_BISHOP = -4
 PROMOTION_KNIGHT = -3
-EN_PASSANT = -10
+DOUBLE_PAWN_MOVE = -10
+EN_PASSANT = -11
 
 
 class Chessboard:
@@ -75,16 +76,14 @@ class Chessboard:
     def __init__(self, board: list, turn: str, castle: dict, en_passant: bool, en_passant_field: int, move_number: int,
                  draw_counter: int) -> None:
         # initialize board
-        self.evaluation = None
         self.board = board
         self.turn = turn
         self.castle = castle
         self.en_passant = en_passant
-        self.en_passant_field = en_passant_field
+        self.en_passant_square = en_passant_field
         self.half_move_count_for_draw = draw_counter
         self.move_number = move_number
-        # list of next board states
-        self.next_states = []
+        self.moves = []  # the list of moves that were made
 
     def is_empty(self, field: int) -> bool:
         """
@@ -123,48 +122,176 @@ class Chessboard:
             return True
         return False
 
-    def move_piece(self, start: int, end: int) -> bool:
+    def move(self, move: tuple):
         """
-        Moves a piece to an empty field. Does NOT check for illegal moves (e.g. move direction, checks, pins)
-        :param start: The starting field.
-        :param end: The destination field.
-        :return: If the piece could be moved.
+        Moves a piece according to the specified move.
+        :param move: The tuple describing the move.
         """
-        # check for special cases
-        if self.is_empty(start):
-            return False
-        if not self.is_empty(end):
-            return False
+        if len(move) < 2:
+            return
 
-        # move the piece
-        self.board[end] = self.board[start]
-        self.board[start] = EMPTY
-        return True
+        start_square = move[0]
+        target_square = move[1]
 
-    def remove_piece(self, field: int) -> bool:
+        if self.is_empty(start_square):
+            return
+        if self.is_white_piece(start_square) and self.turn == 'black':
+            return
+        if self.is_black_piece(start_square) and self.turn == 'white':
+            return
+
+        # execute move
+        self.board[target_square] = self.board[start_square]
+        self.board[start_square] = EMPTY
+        # set en passant as not possible
+        self.en_passant = False
+        # if it was a special move, additional steps must be taken (promotion, en passant, castle)
+        if len(move) > 3:  # castle, en passant, takes, promotion and takes+promotion
+            additional_move_info = move[2]
+            if additional_move_info == EN_PASSANT:
+                # remove en passant pawn
+                if self.turn == 'white':
+                    self.board[target_square - 8] = EMPTY
+                else:
+                    self.board[target_square + 8] = EMPTY
+            elif additional_move_info == DOUBLE_PAWN_MOVE:
+                # set en passant square
+                self.en_passant = True
+                self.en_passant_square = int((start_square + target_square) / 2)
+            elif additional_move_info == CASTLE_SHORT:
+                # move the rook
+                if self.turn == 'white':
+                    self.board[FIELDS['h1']] = EMPTY
+                    self.board[FIELDS['f1']] = ROOK_WHITE
+                else:
+                    self.board[FIELDS['h8']] = EMPTY
+                    self.board[FIELDS['f8']] = ROOK_WHITE
+            elif additional_move_info == CASTLE_LONG:
+                # move the rook
+                if self.turn == 'white':
+                    self.board[FIELDS['a1']] = EMPTY
+                    self.board[FIELDS['d1']] = ROOK_WHITE
+                else:
+                    self.board[FIELDS['a8']] = EMPTY
+                    self.board[FIELDS['d8']] = ROOK_WHITE
+            elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
+                    additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
+                # promote the pawn
+                self.promote(target_square, additional_move_info)
+        # add the move to the list of executed moves
+        self.moves.append(move)
+        # switch turn
+        self.switch_turn()
+
+    def undo_last_move(self):
         """
-        Removes a piece from the board.
-        :param field: The field that is cleared.
-        :return: If a piece was removed.
+        Reverses the last move that has been made.
         """
-        if self.is_empty(field):
-            return False
+        move = self.moves.pop()
+        if len(move) < 2:
+            return
+        start_square = move[0]
+        target_square = move[1]
+        self.switch_turn()
 
-        self.board[field] = EMPTY
-        return True
+        if self.is_empty(target_square):
+            return
+        if self.is_white_piece(target_square) and self.turn == 'black':
+            return
+        if self.is_black_piece(target_square) and self.turn == 'white':
+            return
 
-    def has_evaluation(self) -> bool:
-        return self.evaluation is not None
+        # undo the move
+        self.board[start_square] = self.board[target_square]
+        self.board[target_square] = EMPTY
+        # if it was a special move, additional steps must be taken (promotion, en passant, castle)
+        if len(move) == 3:  # castle, en passant, takes, promotion and takes+promotion
+            additional_move_info = move[2]
+            if additional_move_info == DOUBLE_PAWN_MOVE:
+                pass  # do nothing, is excluded for capture check at the end
+            elif additional_move_info == EN_PASSANT:
+                # restore en passant pawn
+                if self.turn == 'white':
+                    self.board[target_square - 8] = PAWN_BLACK
+                else:
+                    self.board[target_square + 8] = PAWN_WHITE
+            elif additional_move_info == CASTLE_SHORT:
+                # undo the rook move
+                if self.turn == 'white':
+                    self.board[FIELDS['h1']] = ROOK_WHITE
+                    self.board[FIELDS['f1']] = EMPTY
+                else:
+                    self.board[FIELDS['h8']] = ROOK_BLACK
+                    self.board[FIELDS['f8']] = EMPTY
+            elif additional_move_info == CASTLE_LONG:
+                # undo the rook move
+                if self.turn == 'white':
+                    self.board[FIELDS['a1']] = ROOK_WHITE
+                    self.board[FIELDS['d1']] = EMPTY
+                else:
+                    self.board[FIELDS['a8']] = ROOK_BLACK
+                    self.board[FIELDS['d8']] = EMPTY
+            elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
+                    additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
+                # undo promotion
+                if self.turn == 'white':
+                    self.board[start_square] = PAWN_WHITE
+                else:
+                    self.board[start_square] = PAWN_BLACK
+            else:  # takes
+                # undo takes
+                self.board[target_square] = additional_move_info
+        elif len(move) == 4:  # takes+promotion
+            # undo promotion
+            if self.turn == 'white':
+                self.board[start_square] = PAWN_WHITE
+            else:
+                self.board[start_square] = PAWN_BLACK
+            # undo takes
+            self.board[target_square] = move[3]
 
-    def set_evaluation(self, evaluation: float):
-        self.evaluation = evaluation
+        if len(self.moves) > 0:
+            # if the last move was a double pawn move, set en passant
+            previous_move = self.moves[-1]
+            if len(previous_move) == 3 and previous_move[2] == DOUBLE_PAWN_MOVE:
+                self.en_passant = True
+                self.en_passant_square = int((previous_move[0] + previous_move[1]) / 2)
 
-    def get_evaluation(self) -> float:
-        return self.evaluation
+    def promote(self, target_square: int, piece: int):
+        """
+        Promotes a pawn on the target square to the specified piece.
+        If the square is not on the back rank or has no pawn nothing happens.
+        :param target_square: The square of the promotion.
+        :param piece: The promotion constant that specifies the piece.
+        """
+        if self.turn == 'white':
+            if target_square < FIELDS['a8'] or not self.has_piece(target_square, PAWN_WHITE):
+                return
+
+            if piece == PROMOTION_QUEEN:
+                self.board[target_square] = QUEEN_WHITE
+            elif piece == PROMOTION_KNIGHT:
+                self.board[target_square] = KNIGHT_WHITE
+            elif piece == PROMOTION_ROOK:
+                self.board[target_square] = ROOK_WHITE
+            elif piece == PROMOTION_BISHOP:
+                self.board[target_square] = BISHOP_WHITE
+        else:
+            if target_square > FIELDS['h1'] or not self.has_piece(target_square, PAWN_BLACK):
+                return
+
+            if piece == PROMOTION_QUEEN:
+                self.board[target_square] = QUEEN_BLACK
+            elif piece == PROMOTION_KNIGHT:
+                self.board[target_square] = KNIGHT_BLACK
+            elif piece == PROMOTION_ROOK:
+                self.board[target_square] = ROOK_BLACK
+            elif piece == PROMOTION_BISHOP:
+                self.board[target_square] = BISHOP_BLACK
 
     def generate_moves(self) -> list:
         moves = []  # list of tuples with from-square and to-square. Special moves have the move type in third place.
-        legal_moves = []
+
         for field in range(64):
             if self.is_empty(field):
                 continue
@@ -195,181 +322,21 @@ class Chessboard:
                 else:
                     moves.extend(self.get_pawn_moves(field))
 
-        # exclude moves where the white king would be in check (or moved through check)
+        # exclude moves where the king would be in check (or moved through check)
+        legal_moves = []
         for move in moves:
-            start_square = move[0]
-            target_square = move[1]
-            start_content = self.board[start_square]
-            target_content = self.board[target_square]
-            # execute the move
-            self.board[start_square] = EMPTY
-            self.board[target_square] = start_content
-
-            if self.turn == 'white':  # check legality for white
-                if len(move) == 2:
-                    # check for legality
-                    if not self.is_white_king_in_check():
-                        legal_moves.append(move)
-                    # undo the move
-                    self.board[start_square] = start_content
-                    self.board[target_square] = target_content
-                else:
-                    if move[2] == CASTLE_SHORT:
-                        # move the rook
-                        self.board[FIELDS['h1']] = EMPTY
-                        self.board[FIELDS['f1']] = ROOK_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check() and not self.is_attacked_by_black(FIELDS['f1']):
-                            # if king was not in check in the fist place
-                            if not self.is_attacked_by_black(FIELDS['e1']):
-                                legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                        self.board[FIELDS['h1']] = ROOK_WHITE
-                        self.board[FIELDS['f1']] = EMPTY
-                    elif move[2] == CASTLE_LONG:
-                        # move the rook
-                        self.board[FIELDS['a1']] = EMPTY
-                        self.board[FIELDS['d1']] = ROOK_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check() and not self.is_attacked_by_black(FIELDS['d1']):
-                            # if king was not in check in the fist place
-                            if not self.is_attacked_by_black(FIELDS['e1']):
-                                legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                        self.board[FIELDS['a1']] = ROOK_WHITE
-                        self.board[FIELDS['d1']] = EMPTY
-                    elif move[2] == EN_PASSANT:
-                        # remove en passant pawn
-                        self.board[target_square-8] = EMPTY
-                        # check for legality
-                        if not self.is_white_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square-8] = PAWN_BLACK
-                    elif move[2] == PROMOTION_QUEEN:
-                        # put promoted piece
-                        self.board[target_square] = QUEEN_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_ROOK:
-                        # put promoted piece
-                        self.board[target_square] = ROOK_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_BISHOP:
-                        # put promoted piece
-                        self.board[target_square] = BISHOP_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_KNIGHT:
-                        # put promoted piece
-                        self.board[target_square] = KNIGHT_WHITE
-                        # check for legality
-                        if not self.is_white_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-            else:  # check legality for black
-                if len(move) == 2:
-                    # check for legality
-                    if not self.is_black_king_in_check():
-                        legal_moves.append(move)
-                    # undo the move
-                    self.board[start_square] = start_content
-                    self.board[target_square] = target_content
-                else:
-                    if move[2] == CASTLE_SHORT:
-                        # move the rook
-                        self.board[FIELDS['h8']] = EMPTY
-                        self.board[FIELDS['f8']] = ROOK_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check() and not self.is_attacked_by_white(FIELDS['f8']):
-                            # if king was not in check in the fist place
-                            if not self.is_attacked_by_white(FIELDS['e8']):
-                                legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                        self.board[FIELDS['h8']] = ROOK_BLACK
-                        self.board[FIELDS['f8']] = EMPTY
-                    elif move[2] == CASTLE_LONG:
-                        # move the rook
-                        self.board[FIELDS['a8']] = EMPTY
-                        self.board[FIELDS['d8']] = ROOK_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check() and not self.is_attacked_by_white(FIELDS['d8']):
-                            # if king was not in check in the fist place
-                            if not self.is_attacked_by_white(FIELDS['e8']):
-                                legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                        self.board[FIELDS['a8']] = ROOK_BLACK
-                        self.board[FIELDS['d8']] = EMPTY
-                    elif move[2] == EN_PASSANT:
-                        # remove en passant pawn
-                        self.board[target_square+8] = EMPTY
-                        # check for legality
-                        if not self.is_black_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square+8] = PAWN_WHITE
-                    elif move[2] == PROMOTION_QUEEN:
-                        # put promoted piece
-                        self.board[target_square] = QUEEN_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_ROOK:
-                        # put promoted piece
-                        self.board[target_square] = ROOK_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_BISHOP:
-                        # put promoted piece
-                        self.board[target_square] = BISHOP_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-                    elif move[2] == PROMOTION_KNIGHT:
-                        # put promoted piece
-                        self.board[target_square] = KNIGHT_BLACK
-                        # check for legality
-                        if not self.is_black_king_in_check():
-                            legal_moves.append(move)
-                        # undo the move
-                        self.board[start_square] = start_content
-                        self.board[target_square] = target_content
-
+            self.move(move)
+            # check for legality
+            # since a move was made it is the other player's turn
+            if self.turn == 'black' and self.is_white_king_in_check():
+                self.undo_last_move()
+                continue
+            elif self.turn == 'white' and self.is_black_king_in_check():
+                self.undo_last_move()
+                continue
+            else:
+                legal_moves.append(move)
+                self.undo_last_move()
         return legal_moves
 
     def is_white_king_in_check(self) -> bool:
@@ -388,7 +355,7 @@ class Chessboard:
 
     def get_directional_moves(self, field: int, direction_x: int, direction_y: int, distance: int = 7) -> list:
         is_white_piece = self.is_white_piece(field)
-        moves = []  # list of tuples with from-square and to-square.
+        moves = []  # list of tuples with from-square and to-square (and possibly taken piece).
 
         for i in range(1, distance + 1):
             target_field = field + i * direction_x + 8 * i * direction_y
@@ -403,8 +370,10 @@ class Chessboard:
             # check if a piece was reached. (capture or same colour)
             if not self.is_empty(target_field):
                 if not self.is_same_colour(field, target_field):
-                    move = (field, target_field)
+                    # takes move
+                    move = (field, target_field, self.board[target_field])
                     moves.append(move)
+                # a piece was reached: stop searching
                 return moves
 
             move = (field, target_field)
@@ -529,6 +498,56 @@ class Chessboard:
 
         return False
 
+    def is_checkmate(self):
+        if self.turn == 'white':
+            for field in self.board:
+                if self.has_piece(field, KING_WHITE):
+                    if not self.is_attacked_by_black(field):
+                        return False
+                    else:
+                        if len(self.generate_moves()) == 0:
+                            return True
+                        else:
+                            return False
+        else:
+            for field in self.board:
+                if self.has_piece(field, KING_BLACK):
+                    if not self.is_attacked_by_white(field):
+                        return False
+                    else:
+                        if len(self.generate_moves()) == 0:
+                            return True
+                        else:
+                            return False
+
+    def is_stalemate(self):
+        if self.turn == 'white':
+            for field in self.board:
+                if self.has_piece(field, KING_WHITE):
+                    if self.is_attacked_by_black(field):
+                        return False
+                    else:
+                        if len(self.generate_moves()) == 0:
+                            return True
+                        else:
+                            return False
+        else:
+            for field in self.board:
+                if self.has_piece(field, KING_BLACK):
+                    if self.is_attacked_by_white(field):
+                        return False
+                    else:
+                        if len(self.generate_moves()) == 0:
+                            return True
+                        else:
+                            return False
+        return False
+
+    def is_draw(self):
+        return self.is_stalemate()
+        # TODO check for 50 moves rule
+        # TODO check for repetition (later; probably when position hashes are added)
+
     def get_diagonal_moves(self, field: int, distance: int = 7) -> list:
         moves = []
         moves.extend(self.get_directional_moves(field, -1, -1, distance))
@@ -550,16 +569,17 @@ class Chessboard:
         moves.extend(self.get_diagonal_moves(field, 1))
         moves.extend(self.get_straight_moves(field, 1))
         # check castle
-        if self.has_piece(field, KING_WHITE):
+        if self.has_piece(field, KING_WHITE) and field == FIELDS['e1']:
             if self.castle['white']['short'] and self.is_empty(FIELDS['f1']) and self.is_empty(FIELDS['g1']):
                 moves.append((field, FIELDS['g1'], CASTLE_SHORT))
             if self.castle['white']['long'] and self.is_empty(FIELDS['b1']) and self.is_empty(FIELDS['c1']) \
                     and self.is_empty(FIELDS['d1']):
                 moves.append((field, FIELDS['c1'], CASTLE_LONG))
-        elif self.has_piece(field, KING_BLACK):
-            if self.castle['black']['short']:
+        elif self.has_piece(field, KING_BLACK) and field == FIELDS['e8']:
+            if self.castle['black']['short'] and self.is_empty(FIELDS['f8']) and self.is_empty(FIELDS['g8']):
                 moves.append((field, FIELDS['g8'], CASTLE_SHORT))
-            if self.castle['black']['long']:
+            if self.castle['black']['long'] and self.is_empty(FIELDS['b8']) and self.is_empty(FIELDS['c8']) \
+                    and self.is_empty(FIELDS['d8']):
                 moves.append((field, FIELDS['c8'], CASTLE_LONG))
         return moves
 
@@ -588,89 +608,95 @@ class Chessboard:
         return moves
 
     def get_white_pawn_moves(self, field: int) -> list:
+        if not self.has_piece(field, PAWN_WHITE):
+            return []
+
         moves = []
-        if self.has_piece(field, PAWN_WHITE):
-            # forward
-            if self.is_empty(field + 8):
-                # promotion
-                if field + 8 >= 8 * 7:
-                    moves.append((field, field + 8, PROMOTION_QUEEN))
-                    moves.append((field, field + 8, PROMOTION_ROOK))
-                    moves.append((field, field + 8, PROMOTION_BISHOP))
-                    moves.append((field, field + 8, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field + 8))
-                # two squares forward
-                if field < 16 and self.is_empty(field + 16):
-                    moves.append((field, field + 16))
-            # takes
-            if self.is_black_piece(field + 7) and (field + 7) % 8 < field % 8:
-                # promotion
-                if field + 7 >= 8 * 7:
-                    moves.append((field, field + 7, PROMOTION_QUEEN))
-                    moves.append((field, field + 7, PROMOTION_ROOK))
-                    moves.append((field, field + 7, PROMOTION_BISHOP))
-                    moves.append((field, field + 7, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field + 7))
-            if self.is_black_piece(field + 9) and (field + 9) % 8 > field % 8:
-                # promotion
-                if field + 9 >= 8 * 7:
-                    moves.append((field, field + 9, PROMOTION_QUEEN))
-                    moves.append((field, field + 9, PROMOTION_ROOK))
-                    moves.append((field, field + 9, PROMOTION_BISHOP))
-                    moves.append((field, field + 9, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field + 9))
-            # en passant
-            if self.en_passant:
-                if self.en_passant_field == field + 7 and self.en_passant_field % 8 < field % 8:
-                    moves.append((field, self.en_passant_field, EN_PASSANT))
-                elif self.en_passant_field == field + 9 and self.en_passant_field % 8 > field % 8:
-                    moves.append((field, self.en_passant_field, EN_PASSANT))
+
+        # forward
+        if self.is_empty(field + 8):
+            # promotion
+            if field + 8 >= 8 * 7:
+                moves.append((field, field + 8, PROMOTION_QUEEN))
+                moves.append((field, field + 8, PROMOTION_ROOK))
+                moves.append((field, field + 8, PROMOTION_BISHOP))
+                moves.append((field, field + 8, PROMOTION_KNIGHT))
+            else:
+                moves.append((field, field + 8))
+            # two squares forward
+            if field < 16 and self.is_empty(field + 16):
+                moves.append((field, field + 16, DOUBLE_PAWN_MOVE))
+        # takes
+        if self.is_black_piece(field + 7) and (field + 7) % 8 < field % 8:
+            # promotion
+            if field + 7 >= 8 * 7:
+                moves.append((field, field + 7, PROMOTION_QUEEN, self.board[field + 7]))
+                moves.append((field, field + 7, PROMOTION_ROOK, self.board[field + 7]))
+                moves.append((field, field + 7, PROMOTION_BISHOP, self.board[field + 7]))
+                moves.append((field, field + 7, PROMOTION_KNIGHT, self.board[field + 7]))
+            else:
+                moves.append((field, field + 7, self.board[field + 7]))
+        if self.is_black_piece(field + 9) and (field + 9) % 8 > field % 8:
+            # promotion
+            if field + 9 >= 8 * 7:
+                moves.append((field, field + 9, PROMOTION_QUEEN, self.board[field + 9]))
+                moves.append((field, field + 9, PROMOTION_ROOK, self.board[field + 9]))
+                moves.append((field, field + 9, PROMOTION_BISHOP, self.board[field + 9]))
+                moves.append((field, field + 9, PROMOTION_KNIGHT, self.board[field + 9]))
+            else:
+                moves.append((field, field + 9, self.board[field + 9]))
+        # en passant
+        if self.en_passant:
+            if self.en_passant_square == field + 7 and self.en_passant_square % 8 < field % 8:
+                moves.append((field, self.en_passant_square, EN_PASSANT))
+            elif self.en_passant_square == field + 9 and self.en_passant_square % 8 > field % 8:
+                moves.append((field, self.en_passant_square, EN_PASSANT))
         return moves
 
     def get_black_pawn_moves(self, field: int) -> list:
+        if not self.has_piece(field, PAWN_BLACK):
+            return []
+
         moves = []
-        if self.has_piece(field, PAWN_BLACK):
-            # forward
-            if self.is_empty(field - 8):
-                # promotion
-                if field - 8 < 8:
-                    moves.append((field, field - 8, PROMOTION_QUEEN))
-                    moves.append((field, field - 8, PROMOTION_ROOK))
-                    moves.append((field, field - 8, PROMOTION_BISHOP))
-                    moves.append((field, field - 8, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field - 8))
-                # two squares forward
-                if field >= 8 * 6 and self.is_empty(field - 16):
-                    moves.append((field, field - 16))
-            # takes
-            if self.is_white_piece(field - 7) and (field - 7) % 8 > field % 8:
-                # promotion
-                if field - 7 < 8:
-                    moves.append((field, field - 7, PROMOTION_QUEEN))
-                    moves.append((field, field - 7, PROMOTION_ROOK))
-                    moves.append((field, field - 7, PROMOTION_BISHOP))
-                    moves.append((field, field - 7, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field - 7))
-            if self.is_white_piece(field - 9) and (field - 9) % 8 < field % 8:
-                # promotion
-                if field - 9 >= 8 * 7:
-                    moves.append((field, field - 9, PROMOTION_QUEEN))
-                    moves.append((field, field - 9, PROMOTION_ROOK))
-                    moves.append((field, field - 9, PROMOTION_BISHOP))
-                    moves.append((field, field - 9, PROMOTION_KNIGHT))
-                else:
-                    moves.append((field, field - 9))
-            # en passant
-            if self.en_passant:
-                if self.en_passant_field == field - 7 and self.en_passant_field % 8 > field % 8:
-                    moves.append((field, self.en_passant_field, EN_PASSANT))
-                elif self.en_passant_field == field - 9 and self.en_passant_field % 8 < field % 8:
-                    moves.append((field, self.en_passant_field, EN_PASSANT))
+
+        # forward
+        if self.is_empty(field - 8):
+            # promotion
+            if field - 8 < 8:
+                moves.append((field, field - 8, PROMOTION_QUEEN))
+                moves.append((field, field - 8, PROMOTION_ROOK))
+                moves.append((field, field - 8, PROMOTION_BISHOP))
+                moves.append((field, field - 8, PROMOTION_KNIGHT))
+            else:
+                moves.append((field, field - 8))
+            # two squares forward
+            if field >= 8 * 6 and self.is_empty(field - 16):
+                moves.append((field, field - 16, DOUBLE_PAWN_MOVE))
+        # takes
+        if self.is_white_piece(field - 7) and (field - 7) % 8 > field % 8:
+            # promotion
+            if field - 7 < 8:
+                moves.append((field, field - 7, PROMOTION_QUEEN, self.board[field - 7]))
+                moves.append((field, field - 7, PROMOTION_ROOK, self.board[field - 7]))
+                moves.append((field, field - 7, PROMOTION_BISHOP, self.board[field - 7]))
+                moves.append((field, field - 7, PROMOTION_KNIGHT, self.board[field - 7]))
+            else:
+                moves.append((field, field - 7, self.board[field - 7]))
+        if self.is_white_piece(field - 9) and (field - 9) % 8 < field % 8:
+            # promotion
+            if field - 9 >= 8 * 7:
+                moves.append((field, field - 9, PROMOTION_QUEEN, self.board[field - 9]))
+                moves.append((field, field - 9, PROMOTION_ROOK, self.board[field - 9]))
+                moves.append((field, field - 9, PROMOTION_BISHOP, self.board[field - 9]))
+                moves.append((field, field - 9, PROMOTION_KNIGHT, self.board[field - 9]))
+            else:
+                moves.append((field, field - 9, self.board[field - 9]))
+        # en passant
+        if self.en_passant:
+            if self.en_passant_square == field - 7 and self.en_passant_square % 8 > field % 8:
+                moves.append((field, self.en_passant_square, EN_PASSANT))
+            elif self.en_passant_square == field - 9 and self.en_passant_square % 8 < field % 8:
+                moves.append((field, self.en_passant_square, EN_PASSANT))
         return moves
 
     def get_pawn_moves(self, field: int) -> list:
@@ -748,10 +774,30 @@ class Chessboard:
         row += ', draw rule: ' + str(self.half_move_count_for_draw)
         row += ', en passant: '
         if self.en_passant:
-            row += translate_index_into_field(self.en_passant_field)
+            row += translate_index_into_field(self.en_passant_square)
         else:
             row += '-'
         print(row)
+
+        # print checkmate/stalemate
+        if self.is_checkmate():
+            if self.turn == 'white':
+                winner = 'Black'
+            else:
+                winner = 'White'
+            print('CHECKMATE!', winner, 'won the game!')
+        elif self.is_draw():
+            print('Draw!')
+
+    def switch_turn(self):
+        """
+        Switches the player that can make a move.
+        """
+        # switch turn
+        if self.turn == 'white':
+            self.turn = 'black'
+        else:
+            self.turn = 'white'
 
 
 def is_field(index: int) -> bool:
