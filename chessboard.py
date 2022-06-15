@@ -90,11 +90,17 @@ class Chessboard:
         self.board = board
         self.turn = turn
         self.castle = castle
+        self.move_number_castle_loss_short_white = 0
+        self.move_number_castle_loss_long_white = 0
+        self.move_number_castle_loss_short_black = 0
+        self.move_number_castle_loss_long_black = 0
         self.en_passant = en_passant
         self.en_passant_square = en_passant_field
         self.half_move_count_for_draw = draw_counter
         self.move_number = move_number
         self.moves = []  # the list of moves that were made
+        # this list needs to keep track of all previous half move counters for undoing moves
+        self.half_move_counters = []
 
     def is_empty(self, field: int) -> bool:
         """
@@ -158,6 +164,10 @@ class Chessboard:
         self.en_passant = False
         # if it was a special move, additional steps must be taken (promotion, en passant, castle)
         if len(move) > 3:  # castle, en passant, takes, promotion and takes+promotion
+            # reset draw counter (all special irreversible moves)
+            self.half_move_counters.append(self.half_move_count_for_draw)
+            self.half_move_count_for_draw = 0
+
             additional_move_info = move[2]
             if additional_move_info == EN_PASSANT:
                 # remove en passant pawn
@@ -189,8 +199,50 @@ class Chessboard:
                     additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
                 # promote the pawn
                 self.promote(target_square, additional_move_info)
+        else:
+            # pawn moves
+            if self.board[target_square] == PAWN_WHITE or self.board[target_square] == PAWN_BLACK:
+                # reset draw counter
+                self.half_move_counters.append(self.half_move_count_for_draw)
+                self.half_move_count_for_draw = 0
+            # all other moves
+            else:
+                self.half_move_count_for_draw += 1
+        # update castle rights
+        if self.board[target_square] == KING_WHITE or self.board[target_square] == KING_BLACK:
+            if self.castle[self.turn]['short']:
+                self.castle[self.turn]['short'] = False  # remove castle right
+                if self.turn == 'white':
+                    self.move_number_castle_loss_short_white = self.move_number
+                else:
+                    self.move_number_castle_loss_short_black = self.move_number
+            if self.castle[self.turn]['long']:
+                self.castle[self.turn]['long'] = False  # remove castle right
+                if self.turn == 'white':
+                    self.move_number_castle_loss_long_white = self.move_number
+                else:
+                    self.move_number_castle_loss_long_black = self.move_number
+        if self.board[target_square] == ROOK_WHITE or self.board[target_square] == ROOK_BLACK:
+            if self.castle[self.turn]['short']:
+                if self.turn == 'white' and start_square == FIELDS['h1']:
+                    self.castle[self.turn]['short'] = False  # remove castle right
+                    self.move_number_castle_loss_short_white = self.move_number
+                elif self.turn == 'black' and start_square == FIELDS['h8']:
+                    self.castle[self.turn]['short'] = False  # remove castle right
+                    self.move_number_castle_loss_short_black = self.move_number
+            if self.castle[self.turn]['long']:
+                if self.turn == 'white' and start_square == FIELDS['a1']:
+                    self.castle[self.turn]['long'] = False  # remove castle right
+                    self.move_number_castle_loss_long_white = self.move_number
+                elif self.turn == 'black' and start_square == FIELDS['a8']:
+                    self.castle[self.turn]['long'] = False  # remove castle right
+                    self.move_number_castle_loss_long_black = self.move_number
+
         # add the move to the list of executed moves
         self.moves.append(move)
+        # increase move counter
+        if self.turn == 'black':
+            move += 1
         # switch turn
         self.switch_turn()
 
@@ -198,12 +250,39 @@ class Chessboard:
         """
         Reverses the last move that has been made.
         """
+        # get and remove the last move from the list
         move = self.moves.pop()
+        # decrease move counter
+        if self.turn == 'white':
+            move -= 1
+        # decrease half move counter for draw (50 move rule)
+        if self.half_move_count_for_draw > 0:
+            self.half_move_count_for_draw -= 1
+        else:
+            # if it is at 0, the last one is loaded
+            self.half_move_count_for_draw = self.half_move_counters.pop()
+        # switch turn
+        self.switch_turn()
+        # update castle rights
+        if self.turn == 'white':
+            if self.move_number < self.move_number_castle_loss_short_white:
+                self.move_number_castle_loss_short_white = 0
+                self.castle[self.turn] = True
+            if self.move_number < self.move_number_castle_loss_long_white:
+                self.move_number_castle_loss_long_white = 0
+                self.castle[self.turn] = True
+        if self.turn == 'black':
+            if self.move_number < self.move_number_castle_loss_short_black:
+                self.move_number_castle_loss_short_black = 0
+                self.castle[self.turn] = True
+            if self.move_number < self.move_number_castle_loss_long_black:
+                self.move_number_castle_loss_long_black = 0
+                self.castle[self.turn] = True
+
         if len(move) < 2:
             return
         start_square = move[0]
         target_square = move[1]
-        self.switch_turn()
 
         if self.is_empty(target_square):
             return
@@ -596,8 +675,11 @@ class Chessboard:
                             return False
         return False
 
+    def is_draw_move_count(self):
+        return self.half_move_count_for_draw >= 100
+
     def is_draw(self):
-        return self.is_stalemate()
+        return self.is_stalemate() or self.is_draw_move_count()
 
     def get_diagonal_moves(self, field: int, distance: int = 7) -> list:
         moves = []
