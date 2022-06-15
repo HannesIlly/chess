@@ -39,7 +39,7 @@ translation_to_fen = {
     ROOK_BLACK: 'r',
     PAWN_BLACK: 'p',
 }
-FIELDS = {
+SQUARES = {
     'a1': 0,
     'b1': 1,
     'c1': 2,
@@ -48,6 +48,22 @@ FIELDS = {
     'f1': 5,
     'g1': 6,
     'h1': 7,
+    'a2': 8,
+    'b2': 9,
+    'c2': 10,
+    'd2': 11,
+    'e2': 12,
+    'f2': 13,
+    'g2': 14,
+    'h2': 15,
+    'a7': 48,
+    'b7': 49,
+    'c7': 50,
+    'd7': 51,
+    'e7': 52,
+    'f7': 53,
+    'g7': 54,
+    'h7': 55,
     'a8': 56,
     'b8': 57,
     'c8': 58,
@@ -182,19 +198,19 @@ class Chessboard:
             elif additional_move_info == CASTLE_SHORT:
                 # move the rook
                 if self.turn == 'white':
-                    self.board[FIELDS['h1']] = EMPTY
-                    self.board[FIELDS['f1']] = ROOK_WHITE
+                    self.board[SQUARES['h1']] = EMPTY
+                    self.board[SQUARES['f1']] = ROOK_WHITE
                 else:
-                    self.board[FIELDS['h8']] = EMPTY
-                    self.board[FIELDS['f8']] = ROOK_WHITE
+                    self.board[SQUARES['h8']] = EMPTY
+                    self.board[SQUARES['f8']] = ROOK_WHITE
             elif additional_move_info == CASTLE_LONG:
                 # move the rook
                 if self.turn == 'white':
-                    self.board[FIELDS['a1']] = EMPTY
-                    self.board[FIELDS['d1']] = ROOK_WHITE
+                    self.board[SQUARES['a1']] = EMPTY
+                    self.board[SQUARES['d1']] = ROOK_WHITE
                 else:
-                    self.board[FIELDS['a8']] = EMPTY
-                    self.board[FIELDS['d8']] = ROOK_WHITE
+                    self.board[SQUARES['a8']] = EMPTY
+                    self.board[SQUARES['d8']] = ROOK_WHITE
             elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
                     additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
                 # promote the pawn
@@ -224,17 +240,17 @@ class Chessboard:
                     self.move_number_castle_loss_long_black = self.move_number
         if self.board[target_square] == ROOK_WHITE or self.board[target_square] == ROOK_BLACK:
             if self.castle[self.turn]['short']:
-                if self.turn == 'white' and start_square == FIELDS['h1']:
+                if self.turn == 'white' and start_square == SQUARES['h1']:
                     self.castle[self.turn]['short'] = False  # remove castle right
                     self.move_number_castle_loss_short_white = self.move_number
-                elif self.turn == 'black' and start_square == FIELDS['h8']:
+                elif self.turn == 'black' and start_square == SQUARES['h8']:
                     self.castle[self.turn]['short'] = False  # remove castle right
                     self.move_number_castle_loss_short_black = self.move_number
             if self.castle[self.turn]['long']:
-                if self.turn == 'white' and start_square == FIELDS['a1']:
+                if self.turn == 'white' and start_square == SQUARES['a1']:
                     self.castle[self.turn]['long'] = False  # remove castle right
                     self.move_number_castle_loss_long_white = self.move_number
-                elif self.turn == 'black' and start_square == FIELDS['a8']:
+                elif self.turn == 'black' and start_square == SQUARES['a8']:
                     self.castle[self.turn]['long'] = False  # remove castle right
                     self.move_number_castle_loss_long_black = self.move_number
 
@@ -308,19 +324,19 @@ class Chessboard:
             elif additional_move_info == CASTLE_SHORT:
                 # undo the rook move
                 if self.turn == 'white':
-                    self.board[FIELDS['h1']] = ROOK_WHITE
-                    self.board[FIELDS['f1']] = EMPTY
+                    self.board[SQUARES['h1']] = ROOK_WHITE
+                    self.board[SQUARES['f1']] = EMPTY
                 else:
-                    self.board[FIELDS['h8']] = ROOK_BLACK
-                    self.board[FIELDS['f8']] = EMPTY
+                    self.board[SQUARES['h8']] = ROOK_BLACK
+                    self.board[SQUARES['f8']] = EMPTY
             elif additional_move_info == CASTLE_LONG:
                 # undo the rook move
                 if self.turn == 'white':
-                    self.board[FIELDS['a1']] = ROOK_WHITE
-                    self.board[FIELDS['d1']] = EMPTY
+                    self.board[SQUARES['a1']] = ROOK_WHITE
+                    self.board[SQUARES['d1']] = EMPTY
                 else:
-                    self.board[FIELDS['a8']] = ROOK_BLACK
-                    self.board[FIELDS['d8']] = EMPTY
+                    self.board[SQUARES['a8']] = ROOK_BLACK
+                    self.board[SQUARES['d8']] = EMPTY
             elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
                     additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
                 # undo promotion
@@ -355,7 +371,7 @@ class Chessboard:
         :param piece: The promotion constant that specifies the piece.
         """
         if self.turn == 'white':
-            if target_square < FIELDS['a8'] or not self.has_piece(target_square, PAWN_WHITE):
+            if target_square < SQUARES['a8'] or not self.has_piece(target_square, PAWN_WHITE):
                 return
 
             if piece == PROMOTION_QUEEN:
@@ -367,7 +383,7 @@ class Chessboard:
             elif piece == PROMOTION_BISHOP:
                 self.board[target_square] = BISHOP_WHITE
         else:
-            if target_square > FIELDS['h1'] or not self.has_piece(target_square, PAWN_BLACK):
+            if target_square > SQUARES['h1'] or not self.has_piece(target_square, PAWN_BLACK):
                 return
 
             if piece == PROMOTION_QUEEN:
@@ -678,8 +694,11 @@ class Chessboard:
     def is_draw_move_count(self):
         return self.half_move_count_for_draw >= 100
 
+    def is_draw_repetition(self):
+        return False
+
     def is_draw(self):
-        return self.is_stalemate() or self.is_draw_move_count()
+        return self.is_draw_repetition() or self.is_stalemate() or self.is_draw_move_count()
 
     def get_diagonal_moves(self, field: int, distance: int = 7) -> list:
         moves = []
@@ -702,18 +721,18 @@ class Chessboard:
         moves.extend(self.get_diagonal_moves(square, 1))
         moves.extend(self.get_straight_moves(square, 1))
         # check castle
-        if self.has_piece(square, KING_WHITE) and square == FIELDS['e1']:
-            if self.castle['white']['short'] and self.is_empty(FIELDS['f1']) and self.is_empty(FIELDS['g1']):
-                moves.append((square, FIELDS['g1'], CASTLE_SHORT))
-            if self.castle['white']['long'] and self.is_empty(FIELDS['b1']) and self.is_empty(FIELDS['c1']) \
-                    and self.is_empty(FIELDS['d1']):
-                moves.append((square, FIELDS['c1'], CASTLE_LONG))
-        elif self.has_piece(square, KING_BLACK) and square == FIELDS['e8']:
-            if self.castle['black']['short'] and self.is_empty(FIELDS['f8']) and self.is_empty(FIELDS['g8']):
-                moves.append((square, FIELDS['g8'], CASTLE_SHORT))
-            if self.castle['black']['long'] and self.is_empty(FIELDS['b8']) and self.is_empty(FIELDS['c8']) \
-                    and self.is_empty(FIELDS['d8']):
-                moves.append((square, FIELDS['c8'], CASTLE_LONG))
+        if self.has_piece(square, KING_WHITE) and square == SQUARES['e1']:
+            if self.castle['white']['short'] and self.is_empty(SQUARES['f1']) and self.is_empty(SQUARES['g1']):
+                moves.append((square, SQUARES['g1'], CASTLE_SHORT))
+            if self.castle['white']['long'] and self.is_empty(SQUARES['b1']) and self.is_empty(SQUARES['c1']) \
+                    and self.is_empty(SQUARES['d1']):
+                moves.append((square, SQUARES['c1'], CASTLE_LONG))
+        elif self.has_piece(square, KING_BLACK) and square == SQUARES['e8']:
+            if self.castle['black']['short'] and self.is_empty(SQUARES['f8']) and self.is_empty(SQUARES['g8']):
+                moves.append((square, SQUARES['g8'], CASTLE_SHORT))
+            if self.castle['black']['long'] and self.is_empty(SQUARES['b8']) and self.is_empty(SQUARES['c8']) \
+                    and self.is_empty(SQUARES['d8']):
+                moves.append((square, SQUARES['c8'], CASTLE_LONG))
         return moves
 
     def get_queen_moves(self, square: int) -> list:
