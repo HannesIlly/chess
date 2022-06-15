@@ -15,11 +15,6 @@ if __name__ == '__main__':
     #     board.print()
     #     print('Move list:', board.moves)
 
-    # TODO remove castle rights when moving a rook or king
-    # TODO add constants to indicate the loss of castling rights
-    # TODO add restoring of castle rights when undoing a move
-    # TODO add move counting (+50 move rule counting)
-
     while not (board.is_checkmate() or board.is_draw()):
         board.print()
         engine.make_move(3)
