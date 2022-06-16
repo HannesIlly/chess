@@ -21,11 +21,6 @@ if __name__ == '__main__':
         print(board.moves)
     board.print()
 
-    """
-    # random relatively full position with many different moves.
-    board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 0 24')
-    """
-
     """ boards for old tests:
     # stalemate
     # board = chessboard.create_from_fen('rn2k1nr/1p4pp/3p4/p1pP4/PbP2p1q/1b2pPRP/1P1NP1PQ/2B1KBNR w K - 0 1')

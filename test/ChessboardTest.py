@@ -2,6 +2,7 @@ import random
 import unittest
 
 import chessboard
+from board_constants import *
 
 
 class MyTestCase(unittest.TestCase):
@@ -12,42 +13,42 @@ class MyTestCase(unittest.TestCase):
         board = chessboard.create_starting_position()
 
         # row 1
-        self.assertEqual(board.board[chessboard.SQUARES['a1']], chessboard.ROOK_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['b1']], chessboard.KNIGHT_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['c1']], chessboard.BISHOP_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['d1']], chessboard.QUEEN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['e1']], chessboard.KING_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['f1']], chessboard.BISHOP_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['g1']], chessboard.KNIGHT_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['h1']], chessboard.ROOK_WHITE)
+        self.assertEqual(board.board[SQUARES['a1']], ROOK_WHITE)
+        self.assertEqual(board.board[SQUARES['b1']], KNIGHT_WHITE)
+        self.assertEqual(board.board[SQUARES['c1']], BISHOP_WHITE)
+        self.assertEqual(board.board[SQUARES['d1']], QUEEN_WHITE)
+        self.assertEqual(board.board[SQUARES['e1']], KING_WHITE)
+        self.assertEqual(board.board[SQUARES['f1']], BISHOP_WHITE)
+        self.assertEqual(board.board[SQUARES['g1']], KNIGHT_WHITE)
+        self.assertEqual(board.board[SQUARES['h1']], ROOK_WHITE)
         # row 2
-        self.assertEqual(board.board[chessboard.SQUARES['a2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['b2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['c2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['d2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['e2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['f2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['g2']], chessboard.PAWN_WHITE)
-        self.assertEqual(board.board[chessboard.SQUARES['h2']], chessboard.PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['a2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['b2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['c2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['d2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['e2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['f2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['g2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['h2']], PAWN_WHITE)
 
         # row 8
-        self.assertEqual(board.board[chessboard.SQUARES['a8']], chessboard.ROOK_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['b8']], chessboard.KNIGHT_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['c8']], chessboard.BISHOP_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['d8']], chessboard.QUEEN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['e8']], chessboard.KING_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['f8']], chessboard.BISHOP_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['g8']], chessboard.KNIGHT_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['h8']], chessboard.ROOK_BLACK)
+        self.assertEqual(board.board[SQUARES['a8']], ROOK_BLACK)
+        self.assertEqual(board.board[SQUARES['b8']], KNIGHT_BLACK)
+        self.assertEqual(board.board[SQUARES['c8']], BISHOP_BLACK)
+        self.assertEqual(board.board[SQUARES['d8']], QUEEN_BLACK)
+        self.assertEqual(board.board[SQUARES['e8']], KING_BLACK)
+        self.assertEqual(board.board[SQUARES['f8']], BISHOP_BLACK)
+        self.assertEqual(board.board[SQUARES['g8']], KNIGHT_BLACK)
+        self.assertEqual(board.board[SQUARES['h8']], ROOK_BLACK)
         # row 7
-        self.assertEqual(board.board[chessboard.SQUARES['a7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['b7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['c7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['d7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['e7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['f7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['g7']], chessboard.PAWN_BLACK)
-        self.assertEqual(board.board[chessboard.SQUARES['h7']], chessboard.PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['a7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['b7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['c7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['d7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['e7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['f7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['g7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['h7']], PAWN_BLACK)
 
     def test_starting_position_2(self):
         """
@@ -83,6 +84,100 @@ class MyTestCase(unittest.TestCase):
         # counters
         self.assertEqual(board.move_number, 1)
         self.assertEqual(board.half_move_count_for_draw, 0)
+
+    def test_create_from_fen_1(self):
+        """
+        Tests a specific position with many pieces and some additional info.
+        """
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+
+        # row 1
+        self.assertEqual(board.board[SQUARES['a1']], ROOK_WHITE)
+        self.assertEqual(board.board[SQUARES['b1']], EMPTY)
+        self.assertEqual(board.board[SQUARES['c1']], EMPTY)
+        self.assertEqual(board.board[SQUARES['d1']], EMPTY)
+        self.assertEqual(board.board[SQUARES['e1']], KING_WHITE)
+        self.assertEqual(board.board[SQUARES['f1']], EMPTY)
+        self.assertEqual(board.board[SQUARES['g1']], EMPTY)
+        self.assertEqual(board.board[SQUARES['h1']], ROOK_WHITE)
+        # row 2
+        self.assertEqual(board.board[SQUARES['a2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['b2']], EMPTY)
+        self.assertEqual(board.board[SQUARES['c2']], QUEEN_WHITE)
+        self.assertEqual(board.board[SQUARES['d2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['e2']], EMPTY)
+        self.assertEqual(board.board[SQUARES['f2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['g2']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['h2']], EMPTY)
+        # row 3
+        self.assertEqual(board.board[SQUARES['a3']], EMPTY)
+        self.assertEqual(board.board[SQUARES['b3']], BISHOP_WHITE)
+        self.assertEqual(board.board[SQUARES['c3']], EMPTY)
+        self.assertEqual(board.board[SQUARES['d3']], EMPTY)
+        self.assertEqual(board.board[SQUARES['e3']], EMPTY)
+        self.assertEqual(board.board[SQUARES['f3']], KNIGHT_WHITE)
+        self.assertEqual(board.board[SQUARES['g3']], EMPTY)
+        self.assertEqual(board.board[SQUARES['h3']], EMPTY)
+        # row 4
+        self.assertEqual(board.board[SQUARES['a4']], KNIGHT_BLACK)
+        self.assertEqual(board.board[SQUARES['b4']], EMPTY)
+        self.assertEqual(board.board[SQUARES['c4']], EMPTY)
+        self.assertEqual(board.board[SQUARES['d4']], QUEEN_BLACK)
+        self.assertEqual(board.board[SQUARES['e4']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['f4']], EMPTY)
+        self.assertEqual(board.board[SQUARES['g4']], EMPTY)
+        self.assertEqual(board.board[SQUARES['h4']], EMPTY)
+        # row 5
+        self.assertEqual(board.board[SQUARES['a5']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['b5']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['c5']], EMPTY)
+        self.assertEqual(board.board[SQUARES['d5']], EMPTY)
+        self.assertEqual(board.board[SQUARES['e5']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['f5']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['g5']], EMPTY)
+        self.assertEqual(board.board[SQUARES['h5']], PAWN_WHITE)
+        # row 6
+        self.assertEqual(board.board[SQUARES['a6']], EMPTY)
+        self.assertEqual(board.board[SQUARES['b6']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['c6']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['d6']], EMPTY)
+        self.assertEqual(board.board[SQUARES['e6']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['f6']], EMPTY)
+        self.assertEqual(board.board[SQUARES['g6']], KNIGHT_BLACK)
+        self.assertEqual(board.board[SQUARES['h6']], EMPTY)
+        # row 7
+        self.assertEqual(board.board[SQUARES['a7']], EMPTY)
+        self.assertEqual(board.board[SQUARES['b7']], EMPTY)
+        self.assertEqual(board.board[SQUARES['c7']], BISHOP_BLACK)
+        self.assertEqual(board.board[SQUARES['d7']], PAWN_BLACK)
+        self.assertEqual(board.board[SQUARES['e7']], EMPTY)
+        self.assertEqual(board.board[SQUARES['f7']], EMPTY)
+        self.assertEqual(board.board[SQUARES['g7']], PAWN_WHITE)
+        self.assertEqual(board.board[SQUARES['h7']], EMPTY)
+        # row 8
+        self.assertEqual(board.board[SQUARES['a8']], ROOK_BLACK)
+        self.assertEqual(board.board[SQUARES['b8']], EMPTY)
+        self.assertEqual(board.board[SQUARES['c8']], EMPTY)
+        self.assertEqual(board.board[SQUARES['d8']], EMPTY)
+        self.assertEqual(board.board[SQUARES['e8']], KING_BLACK)
+        self.assertEqual(board.board[SQUARES['f8']], EMPTY)
+        self.assertEqual(board.board[SQUARES['g8']], EMPTY)
+        self.assertEqual(board.board[SQUARES['h8']], ROOK_BLACK)
+
+        # turn
+        self.assertEqual(board.turn, 'white')
+        # castle rights
+        self.assertTrue(board.castle['white']['short'])
+        self.assertTrue(board.castle['white']['long'])
+        self.assertTrue(board.castle['black']['short'])
+        self.assertTrue(board.castle['black']['long'])
+        # counters
+        self.assertEqual(board.move_number, 24)
+        self.assertEqual(board.half_move_count_for_draw, 3)
+        # en passant
+        self.assertTrue(board.en_passant)
+        self.assertEqual(board.en_passant_square, SQUARES['a6'])
+
 
 if __name__ == '__main__':
     unittest.main()
