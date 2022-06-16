@@ -178,6 +178,24 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(board.en_passant)
         self.assertEqual(board.en_passant_square, SQUARES['a6'])
 
+    def test_switch_turn(self):
+        """
+        Tests turn switching.
+        """
+        board = chessboard.create_starting_position()
+        self.assertEqual(board.turn, 'white')
+        board.switch_turn()
+        self.assertEqual(board.turn, 'black')
+        board.switch_turn()
+        self.assertEqual(board.turn, 'white')
+
+        board = chessboard.create_from_fen('rn2k1nr/1p4pp/3p4/p1pP4/PbP2p1q/1b2pPRP/1P1NP1PQ/2B1KBNR b K - 2 29')
+        self.assertEqual(board.turn, 'black')
+        board.switch_turn()
+        self.assertEqual(board.turn, 'white')
+        board.switch_turn()
+        self.assertEqual(board.turn, 'black')
+
 
 if __name__ == '__main__':
     unittest.main()
