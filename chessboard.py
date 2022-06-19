@@ -175,7 +175,7 @@ class Chessboard:
         self.moves.append(move)
         # increase move counter
         if self.turn == 'black':
-            move += 1
+            self.move_number += 1
         # switch turn
         self.switch_turn()
 
@@ -187,7 +187,7 @@ class Chessboard:
         move = self.moves.pop()
         # decrease move counter
         if self.turn == 'white':
-            move -= 1
+            self.move_number -= 1
         # decrease half move counter for draw (50 move rule)
         if self.half_move_count_for_draw > 0:
             self.half_move_count_for_draw -= 1
@@ -845,6 +845,63 @@ class Chessboard:
             self.turn = 'black'
         else:
             self.turn = 'white'
+
+    def get_by_index(self, square_number: int) -> int:
+        """
+        Gets the content of a square by its index.
+        :param square_number: The square index.
+        :return: The content of the square as an int.
+        """
+        if 0 <= square_number <= 63:
+            return self.board[square_number]
+        else:
+            raise IndexError
+
+    def get_by_name(self, square_name: str) -> int:
+        """
+        Gets the content of a square by its name.
+        :param square_name: The square name.
+        :return: The content of the square as an int.
+        """
+        if square_name != '':
+            return self.board[SQUARES[square_name]]
+        else:
+            raise IndexError
+
+    def get_move_number(self) -> int:
+        """
+        Gets the current move number.
+        :return: The move number.
+        """
+        return self.move_number
+
+    def get_move_counter_for_draw(self) -> int:
+        """
+        Gets the counter of half moves since the last irreversible move.
+        :return: The half move counter for the 50 move rule.
+        """
+        return self.half_move_count_for_draw
+
+    def get_turn(self) -> str:
+        """
+        Gets the current player.
+        :return: The player that has to move next.
+        """
+        return self.turn
+
+    def is_en_passant_possible(self) -> bool:
+        """
+        Returns if a pawn just moved two squares from its initial position.
+        :return: If an en passant is possible.
+        """
+        return self.en_passant
+
+    def get_en_passant_square(self):
+        """
+        If en passant is possible, returns the en passant square. Otherwise, an empty string is returned.
+        :return: The index of the en passant square.
+        """
+        return self.en_passant_square
 
 
 def is_field(index: int) -> bool:

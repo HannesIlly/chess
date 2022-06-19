@@ -2,10 +2,11 @@ import random
 import unittest
 
 import chessboard
+from chessboard import Chessboard
 from board_constants import *
 
 
-class MyTestCase(unittest.TestCase):
+class CreatePositionTest(unittest.TestCase):
     def test_starting_position_1(self):
         """
         Test all the pieces of the starting positions.
@@ -178,6 +179,8 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(board.en_passant)
         self.assertEqual(board.en_passant_square, SQUARES['a6'])
 
+
+class MoveUndoMoveTest(unittest.TestCase):
     def test_switch_turn(self):
         """
         Tests turn switching.
@@ -195,6 +198,301 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(board.turn, 'white')
         board.switch_turn()
         self.assertEqual(board.turn, 'black')
+
+    def assert_position(self, position: Chessboard, move_number: int, half_move_counter: int, turn_white: bool = True,
+                        /, castle_white_short: bool = True, castle_white_long: bool = True,
+                        castle_black_short: bool = True, castle_black_long: bool = True,
+                        en_passant: bool = False, en_passant_square: str = ''):
+        """
+        Compares the additional position data to the given values.
+        :param position: The position.
+        :param move_number: The move number.
+        :param half_move_counter: The counter of irreversible half moves.
+        :param turn_white: If it is white's turn.
+        :param castle_white_short: If white can castle short.
+        :param castle_white_long: If white can castle long.
+        :param castle_black_short: If black can castle short.
+        :param castle_black_long: If black can castle long.
+        :param en_passant: If en passant is possible.
+        :param en_passant_square: The square on which en passant is possible.
+        :return:
+        """
+        self.assertEqual(position.get_move_number(), move_number, "The move number is incorrect!")
+        self.assertEqual(position.get_move_counter_for_draw(), half_move_counter, "The draw counter is incorrect!")
+        self.assertEqual(position.get_turn(), 'white' if turn_white else 'black', "It's the wrong player's turn!")
+        self.assertEqual(position.castle['white']['short'], castle_white_short, "Short castle (white) is incorrect!")
+        self.assertEqual(position.castle['white']['long'], castle_white_long, "Long castle (white) is incorrect!")
+        self.assertEqual(position.castle['black']['short'], castle_black_short, "Short castle (black) is incorrect!")
+        self.assertEqual(position.castle['black']['long'], castle_black_long, "Long castle (black) is incorrect!")
+        self.assertEqual(position.is_en_passant_possible(), en_passant, "En passant is incorrect!")
+        if position.is_en_passant_possible() and en_passant:
+            self.assertEqual(position.get_en_passant_square(), chessboard.translate_field_into_index(en_passant_square),
+                             "The en passant square is incorrect!")
+
+    def test_move_undo_1(self):
+        """
+        Tests basic moves (reversible, no special moves).
+        """
+        # white to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+
+        # Bc4
+        start_square = 'b3'
+        target_square = 'c4'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), BISHOP_WHITE)
+        self.assert_position(board, 24, 4, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), BISHOP_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # Qc3
+        start_square = 'c2'
+        target_square = 'c3'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), QUEEN_WHITE)
+        self.assert_position(board, 24, 4, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), QUEEN_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # Ng5
+        start_square = 'f3'
+        target_square = 'g5'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_WHITE)
+        self.assert_position(board, 24, 4, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KNIGHT_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # black to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
+
+        # Nc5
+        start_square = 'a4'
+        target_square = 'c5'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assert_position(board, 25, 4, True)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KNIGHT_BLACK)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, False)
+
+        # Nf4
+        start_square = 'g6'
+        target_square = 'f4'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assert_position(board, 25, 4, True)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KNIGHT_BLACK)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, False)
+
+    def test_move_undo_2(self):
+        """
+        Test simple irreversible moves (takes, pawn moves)
+        """
+        # white to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+
+        # g3 (irreversible)
+        start_square = 'g2'
+        target_square = 'g3'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), PAWN_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # Bxa4 (irreversible, takes)
+        start_square = 'b3'
+        target_square = 'a4'
+        move = (SQUARES[start_square], SQUARES[target_square], KNIGHT_BLACK)  # bishop takes knight
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), BISHOP_WHITE)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), BISHOP_WHITE)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # Nxd4 (irreversible, takes)
+        start_square = 'f3'
+        target_square = 'd4'
+        move = (SQUARES[start_square], SQUARES[target_square], QUEEN_BLACK)  # knight takes queen
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_WHITE)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KNIGHT_WHITE)
+        self.assertEqual(board.get_by_name(target_square), QUEEN_BLACK)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # black to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
+
+        # Nxe5 (irreversible, takes)
+        start_square = 'g6'
+        target_square = 'e5'
+        move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # knight takes pawn
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assert_position(board, 25, 0, True)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KNIGHT_BLACK)
+        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assert_position(board, 24, 3, False)
+
+        # Bxe5 (irreversible, takes)
+        start_square = 'c7'
+        target_square = 'e5'
+        move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # knight takes pawn
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), BISHOP_BLACK)
+        self.assert_position(board, 25, 0, True)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), BISHOP_BLACK)
+        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assert_position(board, 24, 3, False)
+
+        # cxb5 (irreversible, takes)
+        start_square = 'c6'
+        target_square = 'b5'
+        move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # pawn takes pawn
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), PAWN_BLACK)
+        self.assert_position(board, 25, 0, True)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), PAWN_BLACK)
+        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assert_position(board, 24, 3, False)
+
+    def test_move_undo_3(self):
+        """
+        Test special moves for white.
+        """
+        # white to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+
+        # Rc1 (irreversible (because of castle loss), castle loss long)
+        start_square = 'a1'
+        target_square = 'c1'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), ROOK_WHITE)
+        self.assert_position(board, 24, 0, False, castle_white_long=False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), ROOK_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # Ke2 (irreversible (because of castle loss), castle loss all)
+        start_square = 'e1'
+        target_square = 'e2'
+        move = (SQUARES[start_square], SQUARES[target_square])
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KING_WHITE)
+        self.assert_position(board, 24, 0, False, castle_white_long=False, castle_white_short=False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KING_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # 0-0 (irreversible (because of castle loss), castle loss all)
+        start_square = 'e1'
+        target_square = 'g1'
+        move = (SQUARES[start_square], SQUARES[target_square], CASTLE_SHORT)
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KING_WHITE)
+        self.assertEqual(board.get_by_name('f1'), ROOK_WHITE)
+        self.assertEqual(board.get_by_name('h1'), EMPTY)
+        self.assert_position(board, 24, 0, False, castle_white_long=False, castle_white_short=False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), KING_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assertEqual(board.get_by_name('f1'), EMPTY)
+        self.assertEqual(board.get_by_name('h1'), ROOK_WHITE)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # g8Q+ (irreversible, promotion)
+        start_square = 'g7'
+        target_square = 'g8'
+        move = (SQUARES[start_square], SQUARES[target_square], QUEEN_WHITE)
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), QUEEN_WHITE)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), PAWN_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # gxh8N (irreversible, promotion+takes)
+        start_square = 'g7'
+        target_square = 'h8'
+        move = (SQUARES[start_square], SQUARES[target_square], KNIGHT_WHITE, ROOK_BLACK)
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), KNIGHT_WHITE)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), PAWN_WHITE)
+        self.assertEqual(board.get_by_name(target_square), ROOK_BLACK)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+        # bxa6 e.p. (irreversible, en passant)
+        start_square = 'b5'
+        target_square = 'a6'
+        move = (SQUARES[start_square], SQUARES[target_square], EN_PASSANT)
+        board.move(move)
+        self.assertEqual(board.get_by_name(start_square), EMPTY)
+        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assertEqual(board.get_by_name('a5'), EMPTY)
+        self.assert_position(board, 24, 0, False)
+        board.undo_last_move()
+        self.assertEqual(board.get_by_name(start_square), PAWN_WHITE)
+        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assertEqual(board.get_by_name('a5'), PAWN_BLACK)
+        self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
+
+    def test_move_undo_4(self):
+        """
+        Test special moves for black.
+        TODO complete tests
+        TODO fix test fails
+        """
+        # d5 (irreversible, en passant possible)
+        # Rg8 (irreversible (because of castle loss), castle loss short)
+        # Kf7 (irreversible (because of castle loss), castle loss all)
+        # 0-0-0 (irreversible (because of castle loss), castle loss all)
 
 
 if __name__ == '__main__':
