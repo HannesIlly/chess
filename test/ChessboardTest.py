@@ -305,7 +305,7 @@ class MoveUndoMoveTest(unittest.TestCase):
         self.assert_position(board, 24, 3, False)
 
     def test_move_undo_2(self):
-        """ TODO correct assertion order
+        """
         Test simple irreversible moves (takes, pawn moves)
         """
         # white to move
@@ -316,12 +316,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'g3'
         move = (SQUARES[start_square], SQUARES[target_square])
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(PAWN_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 0, False)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), PAWN_WHITE)
-        self.assertEqual(board.get_by_name(target_square), EMPTY)
+        self.assertEqual(PAWN_WHITE, board.get_by_name(start_square))
+        self.assertEqual(EMPTY, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
 
         # Bxa4 (irreversible, takes)
@@ -329,12 +329,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'a4'
         move = (SQUARES[start_square], SQUARES[target_square], KNIGHT_BLACK)  # bishop takes knight
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), BISHOP_WHITE)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(BISHOP_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 0, False)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), BISHOP_WHITE)
-        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assertEqual(BISHOP_WHITE, board.get_by_name(start_square))
+        self.assertEqual(KNIGHT_BLACK, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
 
         # Nxd4 (irreversible, takes)
@@ -342,12 +342,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'd4'
         move = (SQUARES[start_square], SQUARES[target_square], QUEEN_BLACK)  # knight takes queen
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), KNIGHT_WHITE)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(KNIGHT_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 0, False)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), KNIGHT_WHITE)
-        self.assertEqual(board.get_by_name(target_square), QUEEN_BLACK)
+        self.assertEqual(KNIGHT_WHITE, board.get_by_name(start_square))
+        self.assertEqual(QUEEN_BLACK, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, True, en_passant=True, en_passant_square='a6')
 
         # black to move
@@ -358,12 +358,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'e5'
         move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # knight takes pawn
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), KNIGHT_BLACK)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(KNIGHT_BLACK, board.get_by_name(target_square))
         self.assert_position(board, 25, 0, True)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), KNIGHT_BLACK)
-        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assertEqual(KNIGHT_BLACK, board.get_by_name(start_square))
+        self.assertEqual(PAWN_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, False)
 
         # Bxe5 (irreversible, takes)
@@ -371,12 +371,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'e5'
         move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # knight takes pawn
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), BISHOP_BLACK)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(BISHOP_BLACK, board.get_by_name(target_square))
         self.assert_position(board, 25, 0, True)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), BISHOP_BLACK)
-        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assertEqual(BISHOP_BLACK, board.get_by_name(start_square))
+        self.assertEqual(PAWN_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, False)
 
         # cxb5 (irreversible, takes)
@@ -384,12 +384,12 @@ class MoveUndoMoveTest(unittest.TestCase):
         target_square = 'b5'
         move = (SQUARES[start_square], SQUARES[target_square], PAWN_WHITE)  # pawn takes pawn
         board.move(move)
-        self.assertEqual(board.get_by_name(start_square), EMPTY)
-        self.assertEqual(board.get_by_name(target_square), PAWN_BLACK)
+        self.assertEqual(EMPTY, board.get_by_name(start_square))
+        self.assertEqual(PAWN_BLACK, board.get_by_name(target_square))
         self.assert_position(board, 25, 0, True)
         board.undo_last_move()
-        self.assertEqual(board.get_by_name(start_square), PAWN_BLACK)
-        self.assertEqual(board.get_by_name(target_square), PAWN_WHITE)
+        self.assertEqual(PAWN_BLACK, board.get_by_name(start_square))
+        self.assertEqual(PAWN_WHITE, board.get_by_name(target_square))
         self.assert_position(board, 24, 3, False)
 
     def test_move_undo_3(self):
