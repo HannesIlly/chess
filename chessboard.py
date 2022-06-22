@@ -28,7 +28,11 @@ class Chessboard:
         self.move_number_castle_loss_short_black = 0
         self.move_number_castle_loss_long_black = 0
         self.en_passant = en_passant
-        self.en_passant_square = en_passant_field
+        self.en_passant_squares = []  # the list of squares where en passant is possible for every position
+        if self.en_passant:
+            self.en_passant_squares.append(en_passant_field)
+        else:
+            self.en_passant_squares.append(-1)
         self.half_move_count_for_draw = draw_counter
         self.move_number = move_number
         self.moves = []  # the list of moves that were made
@@ -95,43 +99,48 @@ class Chessboard:
         self.board[start_square] = EMPTY
         # set en passant as not possible
         self.en_passant = False
+        self.en_passant_squares.append(-1)  # no en passant field
         # if it was a special move, additional steps must be taken (promotion, en passant, castle)
-        if len(move) > 3:  # castle, en passant, takes, promotion and takes+promotion
-            # reset draw counter (all special irreversible moves)
-            self.half_move_counters.append(self.half_move_count_for_draw)
-            self.half_move_count_for_draw = 0
-
+        if len(move) >= 3:  # castle, en passant, takes, promotion and takes+promotion
             additional_move_info = move[2]
-            if additional_move_info == EN_PASSANT:
-                # remove en passant pawn
-                if self.turn == 'white':
-                    self.board[target_square - 8] = EMPTY
-                else:
-                    self.board[target_square + 8] = EMPTY
-            elif additional_move_info == DOUBLE_PAWN_MOVE:
-                # set en passant square
-                self.en_passant = True
-                self.en_passant_square = int((start_square + target_square) / 2)
-            elif additional_move_info == CASTLE_SHORT:
-                # move the rook
-                if self.turn == 'white':
-                    self.board[SQUARES['h1']] = EMPTY
-                    self.board[SQUARES['f1']] = ROOK_WHITE
-                else:
-                    self.board[SQUARES['h8']] = EMPTY
-                    self.board[SQUARES['f8']] = ROOK_WHITE
-            elif additional_move_info == CASTLE_LONG:
-                # move the rook
-                if self.turn == 'white':
-                    self.board[SQUARES['a1']] = EMPTY
-                    self.board[SQUARES['d1']] = ROOK_WHITE
-                else:
-                    self.board[SQUARES['a8']] = EMPTY
-                    self.board[SQUARES['d8']] = ROOK_WHITE
-            elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
-                    additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
-                # promote the pawn
-                self.promote(target_square, additional_move_info)
+            if additional_move_info == CASTLE_SHORT or additional_move_info == CASTLE_LONG:
+                self.half_move_count_for_draw += 1  # increase draw counter
+                if additional_move_info == CASTLE_SHORT:
+                    # move the rook
+                    if self.turn == 'white':
+                        self.board[SQUARES['h1']] = EMPTY
+                        self.board[SQUARES['f1']] = ROOK_WHITE
+                    else:
+                        self.board[SQUARES['h8']] = EMPTY
+                        self.board[SQUARES['f8']] = ROOK_BLACK
+                elif additional_move_info == CASTLE_LONG:
+                    # move the rook
+                    if self.turn == 'white':
+                        self.board[SQUARES['a1']] = EMPTY
+                        self.board[SQUARES['d1']] = ROOK_WHITE
+                    else:
+                        self.board[SQUARES['a8']] = EMPTY
+                        self.board[SQUARES['d8']] = ROOK_BLACK
+            else:
+                # reset draw counter (all special moves except castle)
+                self.half_move_counters.append(self.half_move_count_for_draw)
+                self.half_move_count_for_draw = 0
+
+                if additional_move_info == EN_PASSANT:
+                    # remove en passant pawn
+                    if self.turn == 'white':
+                        self.board[target_square - 8] = EMPTY
+                    else:
+                        self.board[target_square + 8] = EMPTY
+                elif additional_move_info == DOUBLE_PAWN_MOVE:
+                    # set en passant square
+                    self.en_passant = True
+                    # replace the previously set -1
+                    self.en_passant_squares[-1] = int((start_square + target_square) / 2)
+                elif additional_move_info == PROMOTION_QUEEN or additional_move_info == PROMOTION_ROOK or \
+                        additional_move_info == PROMOTION_KNIGHT or additional_move_info == PROMOTION_BISHOP:
+                    # promote the pawn
+                    self.promote(target_square, additional_move_info)
         else:
             # pawn moves
             if self.board[target_square] == PAWN_WHITE or self.board[target_square] == PAWN_BLACK:
@@ -198,19 +207,19 @@ class Chessboard:
         self.switch_turn()
         # update castle rights
         if self.turn == 'white':
-            if self.move_number < self.move_number_castle_loss_short_white:
+            if self.move_number <= self.move_number_castle_loss_short_white:
                 self.move_number_castle_loss_short_white = 0
-                self.castle[self.turn] = True
-            if self.move_number < self.move_number_castle_loss_long_white:
+                self.castle[self.turn]['short'] = True
+            if self.move_number <= self.move_number_castle_loss_long_white:
                 self.move_number_castle_loss_long_white = 0
-                self.castle[self.turn] = True
+                self.castle[self.turn]['long'] = True
         if self.turn == 'black':
-            if self.move_number < self.move_number_castle_loss_short_black:
+            if self.move_number <= self.move_number_castle_loss_short_black:
                 self.move_number_castle_loss_short_black = 0
-                self.castle[self.turn] = True
-            if self.move_number < self.move_number_castle_loss_long_black:
+                self.castle[self.turn]['short'] = True
+            if self.move_number <= self.move_number_castle_loss_long_black:
                 self.move_number_castle_loss_long_black = 0
-                self.castle[self.turn] = True
+                self.castle[self.turn]['long'] = True
 
         if len(move) < 2:
             return
@@ -273,12 +282,13 @@ class Chessboard:
             # undo takes
             self.board[target_square] = move[3]
 
-        if len(self.moves) > 0:
-            # if the last move was a double pawn move, set en passant
-            previous_move = self.moves[-1]
-            if len(previous_move) == 3 and previous_move[2] == DOUBLE_PAWN_MOVE:
-                self.en_passant = True
-                self.en_passant_square = int((previous_move[0] + previous_move[1]) / 2)
+        # set en passant information
+        self.en_passant_squares.pop()  # remove last en passant info
+        en_passant_square = self.en_passant_squares[-1]
+        if en_passant_square != -1:
+            self.en_passant = True
+        else:
+            self.en_passant = False
 
     def promote(self, target_square: int, piece: int):
         """
@@ -716,10 +726,10 @@ class Chessboard:
                 moves.append((square, square + 9, self.board[square + 9]))
         # en passant
         if self.en_passant:
-            if self.en_passant_square == square + 7 and self.en_passant_square % 8 < square % 8:
-                moves.append((square, self.en_passant_square, EN_PASSANT))
-            elif self.en_passant_square == square + 9 and self.en_passant_square % 8 > square % 8:
-                moves.append((square, self.en_passant_square, EN_PASSANT))
+            if self.en_passant_squares[-1] == square + 7 and self.en_passant_squares[-1] % 8 < square % 8:
+                moves.append((square, self.en_passant_squares[-1], EN_PASSANT))
+            elif self.en_passant_squares[-1] == square + 9 and self.en_passant_squares[-1] % 8 > square % 8:
+                moves.append((square, self.en_passant_squares[-1], EN_PASSANT))
         return moves
 
     def get_black_pawn_moves(self, square: int) -> list:
@@ -762,10 +772,10 @@ class Chessboard:
                 moves.append((square, square - 9, self.board[square - 9]))
         # en passant
         if self.en_passant:
-            if self.en_passant_square == square - 7 and self.en_passant_square % 8 > square % 8:
-                moves.append((square, self.en_passant_square, EN_PASSANT))
-            elif self.en_passant_square == square - 9 and self.en_passant_square % 8 < square % 8:
-                moves.append((square, self.en_passant_square, EN_PASSANT))
+            if self.en_passant_squares[-1] == square - 7 and self.en_passant_squares[-1] % 8 > square % 8:
+                moves.append((square, self.en_passant_squares[-1], EN_PASSANT))
+            elif self.en_passant_squares[-1] == square - 9 and self.en_passant_squares[-1] % 8 < square % 8:
+                moves.append((square, self.en_passant_squares[-1], EN_PASSANT))
         return moves
 
     def get_pawn_moves(self, square: int) -> list:
@@ -821,7 +831,7 @@ class Chessboard:
         row += ', draw rule: ' + str(self.half_move_count_for_draw)
         row += ', en passant: '
         if self.en_passant:
-            row += translate_index_into_field(self.en_passant_square)
+            row += translate_index_into_field(self.en_passant_squares[-1])
         else:
             row += '-'
         print(row)
@@ -901,7 +911,7 @@ class Chessboard:
         If en passant is possible, returns the en passant square. Otherwise, an empty string is returned.
         :return: The index of the en passant square.
         """
-        return self.en_passant_square
+        return self.en_passant_squares[-1]
 
 
 def is_field(index: int) -> bool:
@@ -927,7 +937,7 @@ def create_from_fen(fen: str) -> Chessboard:
         }
     }
     en_passant = False
-    en_passant_field = 0
+    en_passant_field = -1
 
     # check special cases
     if len(fen) == 0:
