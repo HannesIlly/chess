@@ -549,5 +549,74 @@ class MoveUndoMoveTest(unittest.TestCase):
     # TODO add more extensive tests of special moves
 
 
+class MoveGenerationTest(unittest.TestCase):
+    def test_move_generation_1(self):
+        possible_moves = [
+            # rook a1
+            (SQUARES['a1'], SQUARES['b1']),
+            (SQUARES['a1'], SQUARES['c1']),
+            (SQUARES['a1'], SQUARES['d1']),
+            # king
+            (SQUARES['e1'], SQUARES['d1']),
+            (SQUARES['e1'], SQUARES['e2']),
+            (SQUARES['e1'], SQUARES['f1']),
+            (SQUARES['e1'], SQUARES['c1'], CASTLE_LONG),
+            (SQUARES['e1'], SQUARES['g1'], CASTLE_SHORT),
+            # rook h1
+            (SQUARES['h1'], SQUARES['g1']),
+            (SQUARES['h1'], SQUARES['f1']),
+            (SQUARES['h1'], SQUARES['h2']),
+            (SQUARES['h1'], SQUARES['h3']),
+            (SQUARES['h1'], SQUARES['h4']),
+            # knight f3
+            (SQUARES['f3'], SQUARES['g1']),
+            (SQUARES['f3'], SQUARES['h2']),
+            (SQUARES['f3'], SQUARES['h4']),
+            (SQUARES['f3'], SQUARES['g5']),
+            (SQUARES['f3'], SQUARES['d4'], QUEEN_BLACK),
+            # bishop b3
+            (SQUARES['b3'], SQUARES['c4']),
+            (SQUARES['b3'], SQUARES['d5']),
+            (SQUARES['b3'], SQUARES['e6'], PAWN_BLACK),
+            (SQUARES['b3'], SQUARES['a4'], KNIGHT_BLACK),
+            # queen
+            (SQUARES['c2'], SQUARES['b1']),
+            (SQUARES['c2'], SQUARES['c1']),
+            (SQUARES['c2'], SQUARES['d1']),
+            (SQUARES['c2'], SQUARES['b2']),
+            (SQUARES['c2'], SQUARES['c3']),
+            (SQUARES['c2'], SQUARES['d3']),
+            (SQUARES['c2'], SQUARES['c4']),
+            (SQUARES['c2'], SQUARES['c5']),
+            (SQUARES['c2'], SQUARES['c6'], PAWN_BLACK),
+            # pawns
+            (SQUARES['a2'], SQUARES['a3']),
+            (SQUARES['b5'], SQUARES['c6'], PAWN_BLACK),
+            (SQUARES['b5'], SQUARES['a6'], EN_PASSANT),
+            (SQUARES['d2'], SQUARES['d3']),
+            (SQUARES['e4'], SQUARES['f5'], PAWN_BLACK),
+            (SQUARES['g2'], SQUARES['g3']),
+            (SQUARES['g2'], SQUARES['g4'], DOUBLE_PAWN_MOVE),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_QUEEN),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_ROOK),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_KNIGHT),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_BISHOP),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_QUEEN, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_ROOK, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_KNIGHT, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_BISHOP, ROOK_BLACK),
+            (SQUARES['h5'], SQUARES['g6'], KNIGHT_BLACK),
+            (SQUARES['h5'], SQUARES['h6']),
+        ]
+        # white to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+        generated_moves = board.generate_moves()
+
+        # compare generated moves to possible moves
+        self.assertEqual(len(possible_moves), len(generated_moves), 'The number of generated moves is wrong!')
+        for move in generated_moves:
+            self.assertTrue(move in possible_moves)
+
+
 if __name__ == '__main__':
     unittest.main()
