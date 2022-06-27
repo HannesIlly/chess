@@ -650,16 +650,24 @@ class Chessboard:
         # check castle
         if self.has_piece(square, KING_WHITE) and square == SQUARES['e1']:
             if self.castle['white']['short'] and self.is_empty(SQUARES['f1']) and self.is_empty(SQUARES['g1']):
-                moves.append((square, SQUARES['g1'], CASTLE_SHORT))
+                # exclude check and move through check
+                if not self.is_white_king_in_check() and not self.is_attacked_by_black(SQUARES['f1']):
+                    moves.append((square, SQUARES['g1'], CASTLE_SHORT))
             if self.castle['white']['long'] and self.is_empty(SQUARES['b1']) and self.is_empty(SQUARES['c1']) \
                     and self.is_empty(SQUARES['d1']):
-                moves.append((square, SQUARES['c1'], CASTLE_LONG))
+                # exclude check and move through check
+                if not self.is_white_king_in_check() and not self.is_attacked_by_black(SQUARES['d1']):
+                    moves.append((square, SQUARES['c1'], CASTLE_LONG))
         elif self.has_piece(square, KING_BLACK) and square == SQUARES['e8']:
             if self.castle['black']['short'] and self.is_empty(SQUARES['f8']) and self.is_empty(SQUARES['g8']):
-                moves.append((square, SQUARES['g8'], CASTLE_SHORT))
+                # exclude check and move through check
+                if not self.is_black_king_in_check() and not self.is_attacked_by_white(SQUARES['f8']):
+                    moves.append((square, SQUARES['g8'], CASTLE_SHORT))
             if self.castle['black']['long'] and self.is_empty(SQUARES['b8']) and self.is_empty(SQUARES['c8']) \
                     and self.is_empty(SQUARES['d8']):
-                moves.append((square, SQUARES['c8'], CASTLE_LONG))
+                # exclude check and move through check
+                if not self.is_black_king_in_check() and not self.is_attacked_by_white(SQUARES['d8']):
+                    moves.append((square, SQUARES['c8'], CASTLE_LONG))
         return moves
 
     def get_queen_moves(self, square: int) -> list:
