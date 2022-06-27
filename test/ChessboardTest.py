@@ -678,12 +678,39 @@ class MoveGenerationTest(unittest.TestCase):
         board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
         generated_moves = board.generate_moves()
 
-        print(possible_moves)
-        print(generated_moves)
         # compare generated moves to possible moves
         self.assertEqual(len(possible_moves), len(generated_moves), 'The number of generated moves is wrong!')
         for move in generated_moves:
             self.assertTrue(move in possible_moves)
+
+    def test_is_attacked_1(self):
+        attacked = {
+            'white': [False, True, True, True, True, True, True, False,
+                      True, True, True, True, True, True, False, True,
+                      False, True, True, True, True, True, True, True,
+                      True, False, True, True, True, False, False, True,
+                      False, False, True, True, True, True, True, True,
+                      True, False, True, True, True, True, True, False,
+                      False, False, False, False, False, False, False, False,
+                      False, False, False, False, False, True, False, True],
+            'black': [True, False, False, False, False, False, False, False,
+                      False, True, False, True, False, True, False, False,
+                      False, False, True, True, True, False, False, False,
+                      True, True, True, False, True, True, True, True,
+                      True, True, True, True, True, True, False, True,
+                      True, True, True, True, True, False, False, True,
+                      True, False, False, True, True, True, False, True,
+                      False, True, True, True, True, True, True, True],
+        }
+
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
+        for i in range(64):
+            self.assertEqual(attacked['white'][i], board.is_attacked_by_white(i),
+                             'The attacked value is not correct for the square ' + str(i) + '/' +
+                             chessboard.translate_index_into_field(i))
+            self.assertEqual(attacked['black'][i], board.is_attacked_by_black(i),
+                             'The attacked value is not correct for the square ' + str(i) + '/' +
+                             chessboard.translate_index_into_field(i))
 
 
 if __name__ == '__main__':
