@@ -546,8 +546,6 @@ class MoveUndoMoveTest(unittest.TestCase):
         self.assertEqual(EMPTY, board.get_by_name('d8'))
         self.assert_position(board, 24, 3, False)
 
-    # TODO add more extensive tests of special moves
-
 
 class MoveGenerationTest(unittest.TestCase):
     def test_move_generation_1(self):
@@ -674,7 +672,7 @@ class MoveGenerationTest(unittest.TestCase):
             (SQUARES['f5'], SQUARES['f4']),
             (SQUARES['f5'], SQUARES['e4'], PAWN_WHITE),
         ]
-        # white to move
+        # black to move
         board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
         generated_moves = board.generate_moves()
 
@@ -711,6 +709,64 @@ class MoveGenerationTest(unittest.TestCase):
             self.assertEqual(attacked['black'][i], board.is_attacked_by_black(i),
                              'The attacked value is not correct for the square ' + str(i) + '/' +
                              chessboard.translate_index_into_field(i))
+
+    def test_is_in_check_1(self):
+        # white in check
+        positions_in_check = [
+            # queen
+            'r1b2r2/pp3kp1/4p2p/2Q3q1/2BPp3/2P3P1/PP4P1/2KR3R w - - 8 19',  # queen (diagonal distance)
+            'r1b2rk1/ppN1pNb1/3pP1p1/5p2/2q3n1/7Q/PPnB1PP1/R4K1R w - - 0 21',  # queen (diagonal, distance)
+            # rook
+            '6k1/p4p1p/1pB3p1/8/P4PP1/2P5/5r1K/1R6 w - - 0 27',  # rook (horizontal, small distance)
+            '8/p3Rpkp/1p4p1/3B4/2P2PP1/r5K1/8/8 w - - 2 33',  # rook (horizontal, distance)
+            '8/p5k1/1p3RB1/6Pp/2P2P2/6K1/8/6r1 w - - 3 40',  # rook (vertical, small distance)
+            # bishop
+            'r1bqk2r/pppp1ppp/5n2/1Bb1n3/4PP2/8/PPPP2PP/RNBQ1RK1 w kq - 0 6',  # bishop (distance)
+            '3qnrk1/4pp1p/r5p1/3N4/3bP3/5B1P/1P4P1/1RQ2RK1 w - - 1 22',  # bishop (distance)
+            '2kr3r/pp3pp1/2p3q1/8/2BnPP2/4B1Pb/PPPN2K1/R2Q1R2 w k - 0 6',  # bishop (next to)
+            # knight
+            '8/6b1/5k1p/2n3pP/4K1P1/5PN1/8/8 w - - 11 49',  # knight
+            'r1b2rk1/ppN1pNb1/2qpP1p1/5p2/2B3n1/7Q/PPnB1PP1/R3K2R w KQ - 12 20',  # knight
+            '3r2k1/pp3p1p/2p3p1/8/5BP1/2P3P1/P3nPB1/5RK1 w - - 0 22',  # knight
+            # pawn
+            '8/5k2/5b1p/3p2pP/4pnP1/1NN2K2/5P2/8 w - - 0 41',  # pawn
+        ]
+        # test the positions
+        for position in positions_in_check:
+            self.assertTrue(chessboard.create_from_fen(position).is_white_king_in_check())
+
+    def test_is_in_check_2(self):
+        # black in check
+        positions_in_check = [
+            # queen
+            'r1b1k2r/pp4p1/4pq1p/7Q/3Pp3/2P3P1/PP4P1/R3KB1R b KQkq - 1 15',  # queen (diagonal distance)
+            'r1b2r2/pp2k1p1/4pq1p/2Q5/3Pp3/2P3P1/PP4P1/2KR1B1R b - - 5 17',  # queen (diagonal distance)
+            'Q5k1/2r1bp1p/1q4p1/1P6/8/5B1P/6P1/1R5K b - - 4 34',  # queen (horizontal distance)
+            '2k3Q1/R7/8/8/1pB2P2/6K1/8/8 b - - 0 49',  # queen (horizontal distance)
+            'r1b3k1/ppN1p1bQ/3pPrp1/5p2/2q5/8/PPn2PP1/R5KR b - - 1 24',  # queen (diagonal, next to)
+            # rook
+            '5Rk1/r1p3pp/2Rp1p2/3P4/8/p1Nn4/5PPP/6K1 b - - 0 38',  # rook (next to)
+            '8/6p1/4kp1p/7P/3p1KP1/1r3P2/4R3/8 b - - 7 54',  # rook (vertical, distance)
+            '8/8/1R6/7P/4K1P1/2r2P2/1k6/8 b - - 4 65',  # rook (vertical, distance)
+            # bishop
+            'r2qk2r/1np1bppp/p2p4/3Pn3/B5b1/2N2N2/1P3PPP/R1BQR1K1 b kq - 2 16',  # bishop (diagonal distance)
+            '6k1/R4B2/8/6P1/1pr2P2/6K1/8/8 b - - 1 45',  # bishop (next to)
+            # knight
+            '8/4b3/4k2p/6pP/3NKnP1/5P2/8/8 b - - 2 44',  # knight
+            '3R4/1bp2q1k/r5pP/np2p1N1/p3Pn2/P1P1Q2P/1P3P2/1K4R1 b - - 3 27',  # knight
+            # pawn
+            '8/3k2pp/2Pp1p2/1r6/6PP/8/3R1P2/6K1 b - - 0 46',  # pawn
+            '8/8/1p2k3/1P1P1rp1/2P1K1R1/8/8/8 b - - 0 69',  # pawn
+        ]
+        # test the positions
+        for position in positions_in_check:
+            self.assertTrue(chessboard.create_from_fen(position).is_black_king_in_check())
+
+    def test_is_not_in_check_1(self):
+        pass  # TODO test for white
+
+    def test_is_not_in_check_2(self):
+        pass  # TODO test for black
 
 
 if __name__ == '__main__':
