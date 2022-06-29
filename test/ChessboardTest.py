@@ -546,7 +546,267 @@ class MoveUndoMoveTest(unittest.TestCase):
         self.assertEqual(EMPTY, board.get_by_name('d8'))
         self.assert_position(board, 24, 3, False)
 
-    # TODO add more extensive tests of special moves
+
+class MoveGenerationTest(unittest.TestCase):
+    def test_move_generation_1(self):
+        possible_moves = [
+            # rook a1
+            (SQUARES['a1'], SQUARES['b1']),
+            (SQUARES['a1'], SQUARES['c1']),
+            (SQUARES['a1'], SQUARES['d1']),
+            # king
+            (SQUARES['e1'], SQUARES['d1']),
+            (SQUARES['e1'], SQUARES['e2']),
+            (SQUARES['e1'], SQUARES['f1']),
+            (SQUARES['e1'], SQUARES['c1'], CASTLE_LONG),
+            (SQUARES['e1'], SQUARES['g1'], CASTLE_SHORT),
+            # rook h1
+            (SQUARES['h1'], SQUARES['g1']),
+            (SQUARES['h1'], SQUARES['f1']),
+            (SQUARES['h1'], SQUARES['h2']),
+            (SQUARES['h1'], SQUARES['h3']),
+            (SQUARES['h1'], SQUARES['h4']),
+            # knight f3
+            (SQUARES['f3'], SQUARES['g1']),
+            (SQUARES['f3'], SQUARES['h2']),
+            (SQUARES['f3'], SQUARES['h4']),
+            (SQUARES['f3'], SQUARES['g5']),
+            (SQUARES['f3'], SQUARES['d4'], QUEEN_BLACK),
+            # bishop b3
+            (SQUARES['b3'], SQUARES['c4']),
+            (SQUARES['b3'], SQUARES['d5']),
+            (SQUARES['b3'], SQUARES['e6'], PAWN_BLACK),
+            (SQUARES['b3'], SQUARES['a4'], KNIGHT_BLACK),
+            # queen
+            (SQUARES['c2'], SQUARES['b1']),
+            (SQUARES['c2'], SQUARES['c1']),
+            (SQUARES['c2'], SQUARES['d1']),
+            (SQUARES['c2'], SQUARES['b2']),
+            (SQUARES['c2'], SQUARES['c3']),
+            (SQUARES['c2'], SQUARES['d3']),
+            (SQUARES['c2'], SQUARES['c4']),
+            (SQUARES['c2'], SQUARES['c5']),
+            (SQUARES['c2'], SQUARES['c6'], PAWN_BLACK),
+            # pawns
+            (SQUARES['a2'], SQUARES['a3']),
+            (SQUARES['b5'], SQUARES['c6'], PAWN_BLACK),
+            (SQUARES['b5'], SQUARES['a6'], EN_PASSANT),
+            (SQUARES['d2'], SQUARES['d3']),
+            (SQUARES['e4'], SQUARES['f5'], PAWN_BLACK),
+            (SQUARES['g2'], SQUARES['g3']),
+            (SQUARES['g2'], SQUARES['g4'], DOUBLE_PAWN_MOVE),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_QUEEN),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_ROOK),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_KNIGHT),
+            (SQUARES['g7'], SQUARES['g8'], PROMOTION_BISHOP),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_QUEEN, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_ROOK, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_KNIGHT, ROOK_BLACK),
+            (SQUARES['g7'], SQUARES['h8'], PROMOTION_BISHOP, ROOK_BLACK),
+            (SQUARES['h5'], SQUARES['g6'], KNIGHT_BLACK),
+            (SQUARES['h5'], SQUARES['h6']),
+        ]
+        # white to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R w KQkq a6 3 24')
+        generated_moves = board.generate_moves()
+
+        # compare generated moves to possible moves
+        self.assertEqual(len(possible_moves), len(generated_moves), 'The number of generated moves is wrong!')
+        for move in generated_moves:
+            self.assertTrue(move in possible_moves)
+
+    def test_move_generation_2(self):
+        possible_moves = [
+            # rook a8
+            (SQUARES['a8'], SQUARES['a7']),
+            (SQUARES['a8'], SQUARES['a6']),
+            (SQUARES['a8'], SQUARES['b8']),
+            (SQUARES['a8'], SQUARES['c8']),
+            (SQUARES['a8'], SQUARES['d8']),
+            # king
+            (SQUARES['e8'], SQUARES['d8']),
+            (SQUARES['e8'], SQUARES['e7']),
+            (SQUARES['e8'], SQUARES['f7']),
+            (SQUARES['e8'], SQUARES['c8'], CASTLE_LONG),
+            # rook h8
+            (SQUARES['h8'], SQUARES['g8']),
+            (SQUARES['h8'], SQUARES['f8']),
+            (SQUARES['h8'], SQUARES['h7']),
+            (SQUARES['h8'], SQUARES['h6']),
+            (SQUARES['h8'], SQUARES['h5'], PAWN_WHITE),
+            # bishop c7
+            (SQUARES['c7'], SQUARES['b8']),
+            (SQUARES['c7'], SQUARES['d8']),
+            (SQUARES['c7'], SQUARES['d6']),
+            (SQUARES['c7'], SQUARES['e5'], PAWN_WHITE),
+            # knight g6
+            (SQUARES['g6'], SQUARES['f8']),
+            (SQUARES['g6'], SQUARES['e7']),
+            (SQUARES['g6'], SQUARES['e5'], PAWN_WHITE),
+            (SQUARES['g6'], SQUARES['f4']),
+            (SQUARES['g6'], SQUARES['h4']),
+            # knight a4
+            (SQUARES['a4'], SQUARES['b2']),
+            (SQUARES['a4'], SQUARES['c3']),
+            (SQUARES['a4'], SQUARES['c5']),
+            # queen
+            (SQUARES['d4'], SQUARES['c3']),
+            (SQUARES['d4'], SQUARES['b2']),
+            (SQUARES['d4'], SQUARES['a1'], ROOK_WHITE),
+            (SQUARES['d4'], SQUARES['d3']),
+            (SQUARES['d4'], SQUARES['d2'], PAWN_WHITE),
+            (SQUARES['d4'], SQUARES['e3']),
+            (SQUARES['d4'], SQUARES['f2'], PAWN_WHITE),
+            (SQUARES['d4'], SQUARES['e4'], PAWN_WHITE),
+            (SQUARES['d4'], SQUARES['e5'], PAWN_WHITE),
+            (SQUARES['d4'], SQUARES['d5']),
+            (SQUARES['d4'], SQUARES['d6']),
+            (SQUARES['d4'], SQUARES['c5']),
+            (SQUARES['d4'], SQUARES['c4']),
+            (SQUARES['d4'], SQUARES['b4']),
+            # pawns
+            (SQUARES['c6'], SQUARES['b5'], PAWN_WHITE),
+            (SQUARES['c6'], SQUARES['c5']),
+            (SQUARES['d7'], SQUARES['d5'], DOUBLE_PAWN_MOVE),
+            (SQUARES['d7'], SQUARES['d6']),
+            (SQUARES['f5'], SQUARES['f4']),
+            (SQUARES['f5'], SQUARES['e4'], PAWN_WHITE),
+        ]
+        # black to move
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
+        generated_moves = board.generate_moves()
+
+        # compare generated moves to possible moves
+        self.assertEqual(len(possible_moves), len(generated_moves), 'The number of generated moves is wrong!')
+        for move in generated_moves:
+            self.assertTrue(move in possible_moves)
+
+    def test_is_attacked_1(self):
+        attacked = {
+            'white': [False, True, True, True, True, True, True, False,
+                      True, True, True, True, True, True, False, True,
+                      False, True, True, True, True, True, True, True,
+                      True, False, True, True, True, False, False, True,
+                      False, False, True, True, True, True, True, True,
+                      True, False, True, True, True, True, True, False,
+                      False, False, False, False, False, False, False, False,
+                      False, False, False, False, False, True, False, True],
+            'black': [True, False, False, False, False, False, False, False,
+                      False, True, False, True, False, True, False, False,
+                      False, False, True, True, True, False, False, False,
+                      True, True, True, False, True, True, True, True,
+                      True, True, True, True, True, True, False, True,
+                      True, True, True, True, True, False, False, True,
+                      True, False, False, True, True, True, False, True,
+                      False, True, True, True, True, True, True, True],
+        }
+
+        board = chessboard.create_from_fen('r3k2r/2bp2P1/1pp1p1n1/pP2Pp1P/n2qP3/1B3N2/P1QP1PP1/R3K2R b KQkq - 3 24')
+        for i in range(64):
+            self.assertEqual(attacked['white'][i], board.is_attacked_by_white(i),
+                             'The attacked value is not correct for the square ' + str(i) + '/' +
+                             chessboard.translate_index_into_field(i))
+            self.assertEqual(attacked['black'][i], board.is_attacked_by_black(i),
+                             'The attacked value is not correct for the square ' + str(i) + '/' +
+                             chessboard.translate_index_into_field(i))
+
+    def test_is_in_check_1(self):
+        # white in check
+        positions_in_check = [
+            # queen
+            'r1b2r2/pp3kp1/4p2p/2Q3q1/2BPp3/2P3P1/PP4P1/2KR3R w - - 8 19',  # queen (diagonal distance)
+            'r1b2rk1/ppN1pNb1/3pP1p1/5p2/2q3n1/7Q/PPnB1PP1/R4K1R w - - 0 21',  # queen (diagonal, distance)
+            # rook
+            '6k1/p4p1p/1pB3p1/8/P4PP1/2P5/5r1K/1R6 w - - 0 27',  # rook (horizontal, small distance)
+            '8/p3Rpkp/1p4p1/3B4/2P2PP1/r5K1/8/8 w - - 2 33',  # rook (horizontal, distance)
+            '8/p5k1/1p3RB1/6Pp/2P2P2/6K1/8/6r1 w - - 3 40',  # rook (vertical, small distance)
+            # bishop
+            'r1bqk2r/pppp1ppp/5n2/1Bb1n3/4PP2/8/PPPP2PP/RNBQ1RK1 w kq - 0 6',  # bishop (distance)
+            '3qnrk1/4pp1p/r5p1/3N4/3bP3/5B1P/1P4P1/1RQ2RK1 w - - 1 22',  # bishop (distance)
+            '2kr3r/pp3pp1/2p3q1/8/2BnPP2/4B1Pb/PPPN2K1/R2Q1R2 w k - 0 6',  # bishop (next to)
+            # knight
+            '8/6b1/5k1p/2n3pP/4K1P1/5PN1/8/8 w - - 11 49',  # knight
+            'r1b2rk1/ppN1pNb1/2qpP1p1/5p2/2B3n1/7Q/PPnB1PP1/R3K2R w KQ - 12 20',  # knight
+            '3r2k1/pp3p1p/2p3p1/8/5BP1/2P3P1/P3nPB1/5RK1 w - - 0 22',  # knight
+            # pawn
+            '8/5k2/5b1p/3p2pP/4pnP1/1NN2K2/5P2/8 w - - 0 41',  # pawn
+        ]
+        # test the positions
+        for position in positions_in_check:
+            self.assertTrue(chessboard.create_from_fen(position).is_white_king_in_check())
+
+    def test_is_in_check_2(self):
+        # black in check
+        positions_in_check = [
+            # queen
+            'r1b1k2r/pp4p1/4pq1p/7Q/3Pp3/2P3P1/PP4P1/R3KB1R b KQkq - 1 15',  # queen (diagonal distance)
+            'r1b2r2/pp2k1p1/4pq1p/2Q5/3Pp3/2P3P1/PP4P1/2KR1B1R b - - 5 17',  # queen (diagonal distance)
+            'Q5k1/2r1bp1p/1q4p1/1P6/8/5B1P/6P1/1R5K b - - 4 34',  # queen (horizontal distance)
+            '2k3Q1/R7/8/8/1pB2P2/6K1/8/8 b - - 0 49',  # queen (horizontal distance)
+            'r1b3k1/ppN1p1bQ/3pPrp1/5p2/2q5/8/PPn2PP1/R5KR b - - 1 24',  # queen (diagonal, next to)
+            # rook
+            '5Rk1/r1p3pp/2Rp1p2/3P4/8/p1Nn4/5PPP/6K1 b - - 0 38',  # rook (next to)
+            '8/6p1/4kp1p/7P/3p1KP1/1r3P2/4R3/8 b - - 7 54',  # rook (vertical, distance)
+            '8/8/1R6/7P/4K1P1/2r2P2/1k6/8 b - - 4 65',  # rook (vertical, distance)
+            # bishop
+            'r2qk2r/1np1bppp/p2p4/3Pn3/B5b1/2N2N2/1P3PPP/R1BQR1K1 b kq - 2 16',  # bishop (diagonal distance)
+            '6k1/R4B2/8/6P1/1pr2P2/6K1/8/8 b - - 1 45',  # bishop (next to)
+            # knight
+            '8/4b3/4k2p/6pP/3NKnP1/5P2/8/8 b - - 2 44',  # knight
+            '3R4/1bp2q1k/r5pP/np2p1N1/p3Pn2/P1P1Q2P/1P3P2/1K4R1 b - - 3 27',  # knight
+            # pawn
+            '8/3k2pp/2Pp1p2/1r6/6PP/8/3R1P2/6K1 b - - 0 46',  # pawn
+            '8/8/1p2k3/1P1P1rp1/2P1K1R1/8/8/8 b - - 0 69',  # pawn
+        ]
+        # test the positions
+        for position in positions_in_check:
+            self.assertTrue(chessboard.create_from_fen(position).is_black_king_in_check())
+
+    def test_is_not_in_check_1(self):
+        # white not in check
+        positions_not_in_check = [
+            # black in check
+            'r1b1k2r/pp4p1/4pq1p/7Q/3Pp3/2P3P1/PP4P1/R3KB1R b KQkq - 1 15',  # queen (diagonal distance)
+            '8/6p1/4kp1p/7P/3p1KP1/1r3P2/4R3/8 b - - 7 54',  # rook (vertical, distance)
+            'r2qk2r/1np1bppp/p2p4/3Pn3/B5b1/2N2N2/1P3PPP/R1BQR1K1 b kq - 2 16',  # bishop (diagonal distance)
+            '8/4b3/4k2p/6pP/3NKnP1/5P2/8/8 b - - 2 44',  # knight
+            '8/8/1p2k3/1P1P1rp1/2P1K1R1/8/8/8 b - - 0 69',  # pawn
+            # both not in check
+            '2n4r/p2k1pbp/2p1b1p1/4p1B1/4P3/N7/PP2BPPP/R5K1 w - - 3 18',
+            '4R3/p4pk1/2p2r1p/2Nn3q/1P3Pb1/P3P1P1/3QP1p1/R5K1 b - - 0 30',
+            '4r1k1/1p4q1/p1b3Q1/8/4p3/1P2N1P1/P5P1/4R1K1 w - - 3 36',
+            'q4rk1/p1p2pp1/4p1Pp/3bP1N1/3PN3/8/3Q1PP1/4R1K1 b - - 0 27',
+            'r1b1kb1r/5ppp/p1pQ2n1/4p3/4P3/5N2/PP3PPP/RNB1K2R b KQkq - 0 11',
+            '3R4/5b2/5pk1/7p/2PN3K/PP1r4/8/8 b - - 4 58',
+            'r1b2rk1/1pp2pq1/p2p3p/6p1/PPBbP1n1/R5NP/4RPP1/2B1Q1K1 b - - 0 19',
+            'r2q1r2/1Rb1n2k/2ppbp1p/2p1p1p1/2P1P3/3PB1NP/P3RPPN/3Q2K1 b - - 6 29',
+        ]
+
+        for position in positions_not_in_check:
+            self.assertFalse(chessboard.create_from_fen(position).is_white_king_in_check())
+
+    def test_is_not_in_check_2(self):
+        # black not in check
+        positions_not_in_check = [
+            # white in check
+            'r1b2rk1/ppN1pNb1/3pP1p1/5p2/2q3n1/7Q/PPnB1PP1/R4K1R w - - 0 21',  # queen (diagonal, distance)
+            '8/p5k1/1p3RB1/6Pp/2P2P2/6K1/8/6r1 w - - 3 40',  # rook (vertical, small distance)
+            'r1bqk2r/pppp1ppp/5n2/1Bb1n3/4PP2/8/PPPP2PP/RNBQ1RK1 w kq - 0 6',  # bishop (distance)
+            'r1b2rk1/ppN1pNb1/2qpP1p1/5p2/2B3n1/7Q/PPnB1PP1/R3K2R w KQ - 12 20',  # knight
+            '8/5k2/5b1p/3p2pP/4pnP1/1NN2K2/5P2/8 w - - 0 41',  # pawn
+            # both not in check
+            '2n4r/p2k1pbp/2p1b1p1/4p1B1/4P3/N7/PP2BPPP/R5K1 w - - 3 18',
+            '4R3/p4pk1/2p2r1p/2Nn3q/1P3Pb1/P3P1P1/3QP1p1/R5K1 b - - 0 30',
+            '4r1k1/1p4q1/p1b3Q1/8/4p3/1P2N1P1/P5P1/4R1K1 w - - 3 36',
+            'q4rk1/p1p2pp1/4p1Pp/3bP1N1/3PN3/8/3Q1PP1/4R1K1 b - - 0 27',
+            'r1b1kb1r/5ppp/p1pQ2n1/4p3/4P3/5N2/PP3PPP/RNB1K2R b KQkq - 0 11',
+            '3R4/5b2/5pk1/7p/2PN3K/PP1r4/8/8 b - - 4 58',
+            'r1b2rk1/1pp2pq1/p2p3p/6p1/PPBbP1n1/R5NP/4RPP1/2B1Q1K1 b - - 0 19',
+            'r2q1r2/1Rb1n2k/2ppbp1p/2p1p1p1/2P1P3/3PB1NP/P3RPPN/3Q2K1 b - - 6 29',
+        ]
+
+        for position in positions_not_in_check:
+            self.assertFalse(chessboard.create_from_fen(position).is_black_king_in_check())
 
 
 if __name__ == '__main__':
