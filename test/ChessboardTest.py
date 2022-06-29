@@ -763,10 +763,50 @@ class MoveGenerationTest(unittest.TestCase):
             self.assertTrue(chessboard.create_from_fen(position).is_black_king_in_check())
 
     def test_is_not_in_check_1(self):
-        pass  # TODO test for white
+        # white not in check
+        positions_not_in_check = [
+            # black in check
+            'r1b1k2r/pp4p1/4pq1p/7Q/3Pp3/2P3P1/PP4P1/R3KB1R b KQkq - 1 15',  # queen (diagonal distance)
+            '8/6p1/4kp1p/7P/3p1KP1/1r3P2/4R3/8 b - - 7 54',  # rook (vertical, distance)
+            'r2qk2r/1np1bppp/p2p4/3Pn3/B5b1/2N2N2/1P3PPP/R1BQR1K1 b kq - 2 16',  # bishop (diagonal distance)
+            '8/4b3/4k2p/6pP/3NKnP1/5P2/8/8 b - - 2 44',  # knight
+            '8/8/1p2k3/1P1P1rp1/2P1K1R1/8/8/8 b - - 0 69',  # pawn
+            # both not in check
+            '2n4r/p2k1pbp/2p1b1p1/4p1B1/4P3/N7/PP2BPPP/R5K1 w - - 3 18',
+            '4R3/p4pk1/2p2r1p/2Nn3q/1P3Pb1/P3P1P1/3QP1p1/R5K1 b - - 0 30',
+            '4r1k1/1p4q1/p1b3Q1/8/4p3/1P2N1P1/P5P1/4R1K1 w - - 3 36',
+            'q4rk1/p1p2pp1/4p1Pp/3bP1N1/3PN3/8/3Q1PP1/4R1K1 b - - 0 27',
+            'r1b1kb1r/5ppp/p1pQ2n1/4p3/4P3/5N2/PP3PPP/RNB1K2R b KQkq - 0 11',
+            '3R4/5b2/5pk1/7p/2PN3K/PP1r4/8/8 b - - 4 58',
+            'r1b2rk1/1pp2pq1/p2p3p/6p1/PPBbP1n1/R5NP/4RPP1/2B1Q1K1 b - - 0 19',
+            'r2q1r2/1Rb1n2k/2ppbp1p/2p1p1p1/2P1P3/3PB1NP/P3RPPN/3Q2K1 b - - 6 29',
+        ]
+
+        for position in positions_not_in_check:
+            self.assertFalse(chessboard.create_from_fen(position).is_white_king_in_check())
 
     def test_is_not_in_check_2(self):
-        pass  # TODO test for black
+        # black not in check
+        positions_not_in_check = [
+            # white in check
+            'r1b2rk1/ppN1pNb1/3pP1p1/5p2/2q3n1/7Q/PPnB1PP1/R4K1R w - - 0 21',  # queen (diagonal, distance)
+            '8/p5k1/1p3RB1/6Pp/2P2P2/6K1/8/6r1 w - - 3 40',  # rook (vertical, small distance)
+            'r1bqk2r/pppp1ppp/5n2/1Bb1n3/4PP2/8/PPPP2PP/RNBQ1RK1 w kq - 0 6',  # bishop (distance)
+            'r1b2rk1/ppN1pNb1/2qpP1p1/5p2/2B3n1/7Q/PPnB1PP1/R3K2R w KQ - 12 20',  # knight
+            '8/5k2/5b1p/3p2pP/4pnP1/1NN2K2/5P2/8 w - - 0 41',  # pawn
+            # both not in check
+            '2n4r/p2k1pbp/2p1b1p1/4p1B1/4P3/N7/PP2BPPP/R5K1 w - - 3 18',
+            '4R3/p4pk1/2p2r1p/2Nn3q/1P3Pb1/P3P1P1/3QP1p1/R5K1 b - - 0 30',
+            '4r1k1/1p4q1/p1b3Q1/8/4p3/1P2N1P1/P5P1/4R1K1 w - - 3 36',
+            'q4rk1/p1p2pp1/4p1Pp/3bP1N1/3PN3/8/3Q1PP1/4R1K1 b - - 0 27',
+            'r1b1kb1r/5ppp/p1pQ2n1/4p3/4P3/5N2/PP3PPP/RNB1K2R b KQkq - 0 11',
+            '3R4/5b2/5pk1/7p/2PN3K/PP1r4/8/8 b - - 4 58',
+            'r1b2rk1/1pp2pq1/p2p3p/6p1/PPBbP1n1/R5NP/4RPP1/2B1Q1K1 b - - 0 19',
+            'r2q1r2/1Rb1n2k/2ppbp1p/2p1p1p1/2P1P3/3PB1NP/P3RPPN/3Q2K1 b - - 6 29',
+        ]
+
+        for position in positions_not_in_check:
+            self.assertFalse(chessboard.create_from_fen(position).is_black_king_in_check())
 
 
 if __name__ == '__main__':
