@@ -573,50 +573,21 @@ class Chessboard:
 
         return False
 
-    def is_checkmate(self):
+    def is_checkmate(self) -> bool:
         if self.turn == 'white':
-            for square in self.board:
-                if self.has_piece(square, KING_WHITE):
-                    if not self.is_attacked_by_black(square):
-                        return False
-                    else:
-                        if len(self.generate_moves()) == 0:
-                            return True
-                        else:
-                            return False
+            if self.is_white_king_in_check():
+                return len(self.generate_moves()) == 0
         else:
-            for square in self.board:
-                if self.has_piece(square, KING_BLACK):
-                    if not self.is_attacked_by_white(square):
-                        return False
-                    else:
-                        if len(self.generate_moves()) == 0:
-                            return True
-                        else:
-                            return False
+            if self.is_black_king_in_check():
+                return len(self.generate_moves()) == 0
 
     def is_stalemate(self):
         if self.turn == 'white':
-            for square in self.board:
-                if self.has_piece(square, KING_WHITE):
-                    if self.is_attacked_by_black(square):
-                        return False
-                    else:
-                        if len(self.generate_moves()) == 0:
-                            return True
-                        else:
-                            return False
+            if not self.is_white_king_in_check():
+                return len(self.generate_moves()) == 0
         else:
-            for square in self.board:
-                if self.has_piece(square, KING_BLACK):
-                    if self.is_attacked_by_white(square):
-                        return False
-                    else:
-                        if len(self.generate_moves()) == 0:
-                            return True
-                        else:
-                            return False
-        return False
+            if not self.is_black_king_in_check():
+                return len(self.generate_moves()) == 0
 
     def is_draw_move_count(self):
         return self.half_move_count_for_draw >= 100
