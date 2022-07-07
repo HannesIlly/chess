@@ -809,5 +809,112 @@ class MoveGenerationTest(unittest.TestCase):
             self.assertFalse(chessboard.create_from_fen(position).is_black_king_in_check())
 
 
+class CheckmateTest(unittest.TestCase):
+
+    # test checkmate
+
+    def test_checkmate_1(self):
+        board = chessboard.create_from_fen('8/8/8/6K1/8/3Q4/8/1Rk5 b - - 48 5')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_2(self):
+        board = chessboard.create_from_fen('3R2k1/b4ppp/8/8/8/8/2r1BPPP/6K1 b - - 36 6')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_3(self):
+        board = chessboard.create_from_fen('r6k/3R2Qp/8/2p5/qp1n1P2/8/PPP5/1K3R2 b - - 0 28')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_4(self):
+        board = chessboard.create_from_fen('2K5/p1q5/1p2n3/PP6/8/5k2/8/8 w - - 1 46')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_5(self):
+        board = chessboard.create_from_fen('8/R7/8/Q2pPp2/k2P1P2/1p6/PP4P1/6K1 b - - 0 47')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_6(self):
+        board = chessboard.create_from_fen('8/1p2R3/p1p1Q2p/5kpq/3P1p2/5b2/PP1B1PPP/R5K1 b - - 6 31')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_7(self):
+        board = chessboard.create_from_fen('5r2/8/P5R1/2p2Nkp/2b3pN/6P1/4PP2/6K1 b - - 0 42')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_8(self):
+        board = chessboard.create_from_fen('rkr5/pppNbq1p/2n5/6B1/3p4/8/PPP2PPP/R5K1 b - - 1 24')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_9(self):
+        board = chessboard.create_from_fen('2r1n1r1/p3qp1k/1p2p1p1/nP1b3R/8/P2B4/1BP2PPP/3R2K1 b - - 11 25')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_10(self):
+        board = chessboard.create_from_fen('2Q5/6p1/1rkp4/2p5/2P3Pp/5r1P/P7/6K1 b - - 5 41')
+        self.assertTrue(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    # test not checkmate
+
+    def test_checkmate_11(self):
+        board = chessboard.create_from_fen('3R2k1/5ppp/1n6/2b5/8/2B2N2/r4PPP/6K1 b - - 22 3')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_12(self):
+        board = chessboard.create_from_fen('8/8/8/8/8/4K3/1Q6/1k6 b - - 38 8')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_13(self):
+        board = chessboard.create_from_fen('r6r/2k3pb/1q1p4/2pRn3/Q1P3Pp/7P/P5B1/R5K1 w - - 3 32')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_14(self):
+        board = chessboard.create_from_fen('1r3r2/2k3p1/3p4/2pB4/2P3Pp/5n1P/P7/4Q1K1 w - - 5 38')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_15(self):
+        board = chessboard.create_from_fen('r1b1k1nr/ppp2ppp/8/8/1nPpq3/5N2/PP2BPPP/RN1QK2R w KQkq - 0 9')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_16(self):
+        board = chessboard.create_from_fen('r3kb1r/ppq1npp1/2n1p3/1B5N/Q1pNb1PP/4B2R/PP3P2/2R1K3 b kq - 5 18')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_17(self):
+        board = chessboard.create_from_fen('r4rk1/pp3np1/5p2/3p3Q/3n1q1P/5N2/PP1N1PP1/R4RK1 w - - 0 19')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_18(self):
+        board = chessboard.create_from_fen('r4rk1/pp3np1/2nq1pQ1/3p3p/3P3P/5N2/PP1N1PP1/R4RK1 b - - 2 17')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_19(self):
+        board = chessboard.create_from_fen('r2q3k/pp3p1p/2pb1p2/6r1/3PQ2N/1PP4P/1P3P2/4RK1R w - - 6 26')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+    def test_checkmate_20(self):
+        board = chessboard.create_from_fen('3Q1k2/pp3p1p/2pb4/5p2/3Pq3/2PN3P/1PK2P2/8 b - - 15 45')
+        self.assertFalse(board.is_checkmate())
+        self.assertFalse(board.is_stalemate())
+
+
 if __name__ == '__main__':
     unittest.main()
